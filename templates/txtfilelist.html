@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>레이아웃</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <link type="text/css" rel="stylesheet" href="{{url_for('static',filename = 'css/style.css')}}">
+
+</head>
+
+<body ng-app="txtFileListApp" ng-controller="txtFileListController" ng-cloak>
+    <div id="ng-setting-div">
+        <div class="top">
+            <img src="{{url_for('static',filename = 'img/AhnLab_CI.png')}}" width="20%" align="left" style="padding: 5px">
+            <h1 id="storage" class="glyphicon glyphicon-floppy-disk">STORAGE</h1>
+        </div>
+
+        <div class="menu" align="left">
+            <nav class="navigator">
+                <ul>
+                    <li id="spam" onclick=spam();><span class="glyphicon glyphicon-zoom-in"></span><a class="spam">  악성 분류</a></li>
+                    <li id="text" onclick=text();><span class="glyphicon glyphicon-duplicate"></span><a class="textcompare">  문서 분류</a></li>
+                    <li id="income" onclick=income();><span class="glyphicon glyphicon-stats"></span><a class="expectincome">  예상 수입</a></li>
+                    <li id="bookmark" onclick=bookmark();><span class="glyphicon glyphicon-star"></span><a class="storebookmark">  북마크 핀</a></li>
+                </ul>
+        </div>
+
+        <div class="textMain" id="textMain">
+
+
+            <form name="txtFrm" action="/txtpage/filelist/presentation" method="POST">
+                {% for presentation in dir_list %}
+                <label>
+	  				<input type="submit" value="{{file_path}}/{{presentation}}" class="classifyDir" name="presentation">
+	  				<p class="classifyTxt">발표자료</p>
+	  			</label> {% endfor %}
+
+            </form>
+
+            <form name="Frm" id="Frm" action="it is converted at js" method="POST"></form>
+            {% for file in file_list %}
+            <label class="txtlabel"><div class="txticon" ></div> <input type ="radio" value ="{{file_path}}/{{file}}" name = "radiobox" class = "radiobox" >{{file}}</label> {% endfor %}
+            </form>
+
+            <a class="downBtn">
+                <p id="downloadIcon">+</p>
+            </a>
+
+            <a class="bookmarkBtn">
+                <p id="bookmarkIcon">★</p>
+            </a>
+            <a class="deleteBtn">
+                <p id="rmIcon">-</p>
+            </a>
+            <a class="logoutBtn" onclick="logout()">
+                <p id="logoutIcon">Log Out</p>
+            </a>
+
+
+        </div>
+
+
+    </div>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-messages.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
+    <script src="{{url_for('static',filename = 'js/jquery-1.11.1.min.js')}}"></script>
+    <script src="{{url_for('static',filename = 'js/front.js')}}"></script>
+</body>
+
+</html>

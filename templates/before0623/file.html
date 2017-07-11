@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html  lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>레이아웃</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+
+</head>
+<style type ="text/css">
+*	{
+	margin :0px;
+	padding: 0px;
+}
+ul {
+	list-style: none;
+
+}
+body{
+	height: 870px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+
+}
+.top {
+	position: relative;
+	background-color: #EDEDED;
+	height: 100px;
+	padding-top:20px;
+	line-height: 50px;
+	overflow: hidden;
+	z-index: 2;
+}
+
+.top > h1 {
+	
+	text-align: center;
+ 	margin :0;
+ 	color: white;
+ 	font-size: 100px;
+
+}
+
+nav > ul >li {
+	padding :20px;
+	font-size: 20px;
+}
+.menu	{
+	text-align: center;
+	background: #37474f;
+	height: 100%;
+	width : 20%;
+	position: absolute;
+	color:#8B9498;
+}
+li:hover{
+	background: rgb(64,196,255);
+	color:white;
+}
+span:hover{
+
+		background: #E4E4E4;
+		color:#428;
+}
+
+.spamMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+	font-size: 50px
+}
+.textMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+	font-size: 50px
+
+}
+.incomeMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+}
+#storage	{
+	margin-left: 180px;
+
+}
+.malDir {
+	background : url("{{url_for('static',filename = 'img/folder.png')}}");
+	width :128px;
+	height:128px;
+	border: none;
+	margin-left: 260px;
+	margin-top: 130px;
+	font-size: 0px;
+
+}
+.notmalDir {
+	background : url("{{url_for('static',filename = 'img/folder2.png')}}");
+	width :128px;
+	height:128px;
+	border: none;
+	margin-left: 190px;
+	margin-top: 130px;
+	font-size: 0px;
+}
+.classifyDir{
+	background : url("{{url_for('static',filename = 'img/folder3.png')}}");
+	width: 128px;
+	height: 128px;
+	border:none;
+	margin-left: 239px;
+	margin-top:79px;
+	vertical-align: left;
+	font-size: 0px;
+}
+
+
+.malTxt {
+	margin-left: 270px;
+	font-size: 30px;
+}
+.notmalTxt{
+	margin-left: 170px;
+	font-size: 30px;
+}
+.clssifyTxt{
+	
+	margin-left: 250px;
+	font-size: 30px;
+
+}
+#textfolder	{
+	width:400px;
+	height:200px;
+	padding-top: 50px;
+	margin-top: 100px;
+	margin-left: 70px;
+}
+#exeuploadBtn{
+	font-size: 30px;
+	margin-top:330px;
+	margin-left: 739px;
+}
+#txtuploadBtn{
+	font-size: 30px;
+	margin-top:100px;
+	margin-left: 739px;
+}
+
+
+</style>
+
+<body>
+	<div id="ng-setting-div" ng-app="testApp" ng-controlloer="testController">
+	    <div class="top">
+	  		<img src="{{url_for('static',filename = 'img/AhnLab_CI.png')}}"width="20%" align="left" style="padding: 5px"><h1 id ="storage"  class ="glyphicon glyphicon-floppy-disk">STORAGE</h1>
+	  	</div>
+
+	  	<div class="menu" align="left">
+	  		<nav class= "navigator">
+	  		<ul>
+	  			<li id = "spam" onclick=spam();><span class="glyphicon glyphicon-zoom-in"></span><a class="spam">  악성 분류</a></li>
+	  			<li id = "text" onclick=text();><span class="glyphicon glyphicon-duplicate"></span><a class="textcompare">  문서 분류</a></li>
+	  			<li id = "income" onclick=income();><span class="glyphicon glyphicon-stats"></span><a class="expectincome">  예상 수입</a></li>
+	  		</ul>
+	  	</div> 
+
+	  	<div class="spamMain" id="spamMain" style = "visibility: visible">
+
+
+
+	  		<form name ="malFrm" action = "htmltest/htmltest2" method="POST" >
+		  		{%for dir in spamdir_list %}
+					{%if dir=="malware" %}
+		  				<label><input type ="submit"   value = "{{dir}}" class = "malDir"  name ='dir' ><p class="malTxt">{{dir}}</p></label>
+		  			{% else %}
+		  				<label><input type ="submit"   value = "{{dir}}" class = "notmalDir"  name = "dir"><p class="notmalTxt">{{dir}}</p></label>	
+		  			{% endif %}
+		  		{%endfor%}
+		  		<br>
+		  	</form>
+
+
+
+
+
+	  		<button class = "label label-primary" id = "exeuploadBtn">File Upload</button>
+
+	  	</div>
+	  	
+	  	<div class="textMain" id="textMain"  style = "visibility: hidden">
+	  		
+	  		<form name = "txtFrm" action="htmltest/htmltest2" method ="POST">
+				{% for dir in textdir_list %}
+	  				<label><input type ="submit"   value = "{{dir}}" class = "classifyDir"   name="dir"><p class="clssifyTxt">{{dir}}</p></label>
+		  			
+				{%endfor%}
+
+			</form>
+
+	  		<button class = "label label-primary" id = "txtuploadBtn">Upload</button>
+  	
+	  	</div>
+
+
+	  	<div class="incomeMain" id="incomeMain"  style = "visibility: hidden">
+	  		<span class = "label label-success">Default</span>
+	  		<span class = "label label-info">Default</span>
+	  		<span class = "label label-danger">Default</span>
+
+
+
+	  		<a>income main</a>
+	  	</div>
+
+	
+	 </div>	
+
+
+  	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+  	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+    <script src="{{url_for('static',filename = 'js/jquery-1.11.1.min.js')}}"></script>
+    <script src="{{url_for('static',filename = 'js/file.js')}}"></script>
+
+</body>
+</html>

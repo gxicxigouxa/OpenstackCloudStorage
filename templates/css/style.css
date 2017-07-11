@@ -1,0 +1,404 @@
+*	{
+	margin :0px;
+	padding: 0px;
+}
+ul {
+	list-style: none;
+
+}
+body{
+	height: 870px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+
+}
+.top {
+	position: relative;
+	background-color: #EDEDED;
+	height: 100px;
+	padding-top:20px;
+	line-height: 50px;
+	overflow: hidden;
+	z-index: 2;
+}
+
+.top > h1 {
+	
+	text-align: center;
+ 	margin :0;
+ 	color: white;
+ 	font-size: 100px;
+
+}
+
+nav > ul >li {
+	padding :20px;
+	font-size: 20px;
+}
+.menu	{
+	text-align: center;
+	background: #37474f;
+	height: 100%;
+	width : 20%;
+	position: absolute;
+	color:#8B9498;
+}
+li:hover{
+	background: rgb(64,196,255);
+	color:white;
+}
+span:hover{
+
+		background: #E4E4E4;
+		color:#428;
+}
+.bookmarkMain{
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+	font-size: 50px
+
+
+
+}
+.spamMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+	font-size: 50px
+}
+.textMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:900px;
+	position: absolute;
+	font-size: 50px
+
+}
+.incomeMain   {
+	margin-left: 253px;
+	height: 100%;
+	width:1000px;
+	position: absolute;
+}
+#storage	{
+	margin-left: 180px;
+
+}
+.malDir {
+	background : url("../img/folder.png");
+	width :128px;
+	height:128px;
+	border: none;
+	margin-left: 260px;
+	margin-top: 130px;
+	font-size: 0px;
+
+}
+.notmalDir {
+	background : url("../img/folder2.png");
+	width :128px;
+	height:128px;
+	border: none;
+	margin-left: 190px;
+	margin-top: 130px;
+	font-size: 0px;
+}
+.classifyDir{
+	background : url("../img/folder3.png");
+	width: 128px;
+	height: 128px;
+	border:none;
+	margin-left: 239px;
+	margin-top:79px;
+	vertical-align: left;
+	font-size: 0px;
+}
+
+
+.malTxt {
+	margin-left: 270px;
+	font-size: 30px;
+}
+.notmalTxt{
+	margin-left: 170px;
+	font-size: 30px;
+}
+.classifyTxt{
+	
+	margin-left: 250px;
+	font-size: 30px;
+
+}
+#textfolder	{
+	width:400px;
+	height:200px;
+	padding-top: 50px;
+	margin-top: 100px;
+	margin-left: 70px;
+}
+#exeuploadBtn{
+	font-size: 30px;
+	margin-left: 770px;
+	margin-top: 400px;
+}
+
+#txtuploadBtn{
+	font-size: 30px;
+	margin-top:180px;
+	margin-left: 770px;
+}
+#txtfalseinput {
+		font-size: 20px;
+		color: white;
+		margin-top:130px;
+		margin-left: 650px;
+
+}
+#txt_selected_filename{
+	font-size: 20px;
+
+}
+.txtuploadform{
+	width : 0px;
+	height:0px;
+
+}
+.upfile	{
+	margin-top: 100px;
+	font-size: 20px;
+
+}
+#malfalseinput {
+		font-size: 20px;
+		color: white;
+		margin-top: 60px;
+		margin-left: 650px;
+
+}
+#mal_selected_filename{
+	font-size: 20px;
+}
+.exeuploadform{
+	width : 300px;
+	height:300px;
+}
+
+.fname{
+	font-size: 20px;
+	width:100px;
+}
+.flist{
+	margin-left: 100px;
+	margin-top: 100px;
+
+}
+.malicon{
+	background: url("../img/exefile.png");
+	display:block;
+	height:128px;	
+	width: 128px;
+	text-align: center;
+}
+.notmalicon{
+	background: url("../img/exefile.png");
+	display:block;
+	height:128px;	
+	width: 128px;
+	text-align: center;
+}
+.txticon{
+	background: url("../img/text.png");
+	display:block;
+	height:128px;	
+	width: 128px;
+	text-align: center;
+}
+
+.presentationicon{
+	background: url("../img/folder3.png");
+	display:block;
+	height:128px;	
+	width: 128px;
+	text-align: center;
+}
+.pptfileicon{
+	background: url("../img/ppt.png");
+	display:block;
+	height:128px;	
+	width: 128px;
+	text-align: center;
+}
+.bookmarkicon{
+	background:  url("../img/bookmark.png");
+	display:block;
+	height:128px;
+	width:128px;
+	text-align: center;	
+
+
+}
+.presentationlabel{
+	margin-left: 220px;
+	font-size: 25px;
+	margin-top: 110px;
+
+}
+
+.mallabel{
+	margin-left: 220px;
+	font-size: 25px;
+	margin-top: 110px;
+
+}
+.txtlabel{
+	margin-left: 220px;
+	font-size: 25px;
+	margin-top: 110px;
+
+}
+.bookmarklabel{
+	margin-left: 220px;
+	font-size: 25px;
+	margin-top: 110px;
+
+}
+.loginboard{
+	width: 450px;
+	height: 500px;
+	background-color: #EDEDED;
+	margin-top: 100px;
+	margin-left : 430px;
+}
+.logintxt{
+	font-size: 50px;
+	color: gray;
+	margin-top: 20px;
+	margin-left:170px;
+
+}
+.signupboard{
+	width: 800px;
+	height: 600px;
+	background-color: #EDEDED;
+	margin-top: 100px;
+	margin-left : 250px;
+	overflow-y: scroll;
+	}
+.signuptxt{
+	font-size: 50px;
+	color: gray;
+	margin-top: 20px;
+	margin-left:330px;
+
+}	
+
+.downBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:40px;
+	right:40px;
+	background-color:#0C9;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;
+}
+
+.my-downBtn{
+	margin-top:22px;
+}
+.logoutBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:670px;
+	right:20px;
+	background-color:#999EBB;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;	
+	font-size: 20px;
+}
+.bookmarkBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:200px;
+	right:40px;
+	background-color:#286EBB;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;
+
+}
+
+.my-bookmarkBtn{
+	margin-top:22px;
+}
+
+.bookmarkdownBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:120px;
+	right:40px;
+	background-color:#0C9;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;
+
+}
+
+.deleteBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:120px;
+	right:40px;
+	background-color:#CA2027;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;
+
+}
+.rmbookmarkBtn{
+	position:fixed;
+	width:60px;
+	height:60px;
+	bottom:120px;
+	right:40px;
+	background-color:#FDCE18;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #999;
+
+}
+.rmbookmarkicon{
+
+	font-size: 20px;
+	padding-bottom: 30px;
+	margin-right: 900px;
+}
+#downloadIcon{
+	font-size:40px;
+	margin-left:2px;
+	margin-top: :10px;
+}
+#rmIcon{
+	font-size:40px;
+
+}
+#bookmarkIcon{
+	font-size:20px;
+	margin-top:15px;
+
+}

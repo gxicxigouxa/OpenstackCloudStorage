@@ -1,0 +1,26 @@
+<md-dialog aria-label="fileSharingDialogContent" class="file-sharing-content-container">
+    <div class="md-toolbar-tools">
+        <h2></h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="file_sharing_dialog-header">
+            </div>
+            <div class="file_sharing_dialog-container" layout-gt-xs="row">
+                <md-input-container class="md-block" flax-gt-xs>
+                    <label>공유할 사용자 ID 입력</label>
+                    <input ng-model="forSharingUserId">
+                </md-input-container>
+            </div>
+            <div class="file_sharing_dialog-button">
+                <md-button ng-click="clickSharingButton()">공유</md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

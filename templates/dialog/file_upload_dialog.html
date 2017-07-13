@@ -1,0 +1,26 @@
+<md-dialog aria-label="fileUploadDialogContent" class="file-upload-content-container">
+    <div class="md-toolbar-tools">
+        <h2>파일 업로드</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="file_upload_dialog-header">
+            </div>
+            <div class="file_upload_dialog-container">
+                <div ui-grid="toUploadFilesGridData" ui-grid-selection ui-grid-move-columns class="grid"></div>
+            </div>
+            <div class="file_upload_dialog-button">
+                <input id="fileInputButton" type="file" class="ng-hide" multiple onchange="angular.element(this).scope().fileChanged(this)" aria-label="fileInput"></input>
+                <label for="fileInputButton" class="md-button md-raised">파일 선택</label>
+                <md-button class="md-raised md-warn" ng-click="removeSelectedFiles()" ng-disabled="isNotSelectedToUploadFiles()">선택한 파일 제거</md-button>
+                <md-button type="submit" class="md-raised md-primary" ng-click="uploadFiles()" ng-disabled="isEmptyToUploadFiles()">업로드</md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

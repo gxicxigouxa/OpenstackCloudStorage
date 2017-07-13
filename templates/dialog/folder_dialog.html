@@ -1,0 +1,28 @@
+<md-dialog aria-label="folderDialogContent" class="folder-content-container">
+    <div class="md-toolbar-tools">
+        <h2>폴더: {{folderName}}</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="folder_dialog-header">
+            </div>
+            <div class="folder_dialog-container">
+                <div ui-grid="existFilesGridData" ui-grid-selection ui-grid-move-columns class="grid"></div>
+            </div>
+            <div class="folder_dialog-button">
+                <form name="actFrm">
+                    <input id="fileInputButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChanged(this)" aria-label="fileInput" name="upFile"></input>
+                    <label for="fileInputButton" class="md-button md-raised">업로드</label>
+                    <md-button class="md-raised" ng-click="downloadSelectedFile()" ng-disabled="isNotSelectedExistFiles()">다운로드</md-button>
+                    <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
+                </form>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

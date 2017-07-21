@@ -48,6 +48,7 @@ import sys
 import nltk.stem
 import docx2txt
 from pptx import Presentation
+import requests
 #-*- coding: utf-8 -*-
 
 mystopword = frozenset([
@@ -162,6 +163,7 @@ def chksignup():
 		signUpId= request.form['user-id']
 		signUpPwd= request.form['user-password']
 		signUpBirthday = request.form['user-birthday']
+		signUpEmail = request.form['user-email']
 		
 		print (signUpId)
 		conn =mysql.connect()
@@ -181,9 +183,40 @@ def chksignup():
 		print (str(result))
 
 		if (str(result)=='[]'): # When there is no user id in db
-			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "');"
+			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "', '" + signUpEmail + "');"
 			cursor.execute(query)
 			conn.commit()
+
+			#######get the admin token
+			headers = {"content-type":"application/json"}
+			data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
+			print(json.dumps(data))
+			admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			print(admin_token_response)
+			json_dict= json.loads(admin_token_response.text)
+			admin_token=json_dict['access']['token']['id']
+			print(admin_token)
+			###########################
+			#### tenant create
+			headers =  {"content-type":"application/json", "x-auth-token":admin_token}
+			data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
+			response = requests.post('http://125.132.100.206:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+			print(response)
+			#############################
+			######User Create#######
+			#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
+			data = {"user":{"email":signUpEmail,"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
+			response = requests.post('http://125.132.100.206:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+			print(response)
+			json_dict = json.loads(response.text)
+			print(json_dict)
+			user_id =json_dict['user']['id']# id is not real id (signup id is user nam ) ex>8cc705d2c8bc4a1f8874f50eee32fc92
+			###############################################
+			######Role Create ###########################
+			#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
+			response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+			print(response)
+			###########################################
 			return render_template('oldlogin.html',login_err_code ="none", sign_up_err_code = "success")
 		else:
 			return render_template('oldlogin.html', login_err_code = "none", sign_up_err_code = "existed id")
@@ -192,8 +225,46 @@ def chksignup():
 @app.route('/basicpage')
 def showbasicpage():
 
-	return "ok"
+	
 
+	return render_template("basicpage.html")
+	#return "ok"
+@app.route('/urltest')
+def urltest():
+	
+	headers = {"content-type":"application/json"}
+	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
+	admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	print(admin_token_response)
+	json_dict= json.loads(admin_token_response.text)
+	admin_token=json_dict['access']['token']['id']
+	print(admin_token)
+	
+	signUpId= 'noduplicate123322'
+	signUpPwd='testpwd'
+	signUpEmail ="123"
+
+
+	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
+	data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
+	response = requests.post('http://125.132.100.206:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+	print(response)
+
+	#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
+	data = {"user":{"email":signUpEmail,	"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
+	response = requests.post('http://125.132.100.206:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+	print(response)
+	json_dict = json.loads(response.text)
+	print(json_dict)
+	user_id =json_dict['user']['id']# id is not real id (signup id is user nam ) ex>8cc705d2c8bc4a1f8874f50eee32fc92
+
+
+
+	#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
+	response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+	print(response)
+
+	return "ok"
 
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

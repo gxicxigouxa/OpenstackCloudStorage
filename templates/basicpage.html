@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>레이아웃</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link type="text/css" rel="stylesheet" href="{{url_for('static',filename = 'css/style.css')}}">
+
+
+
+</head>
+<!--
+<body ng-app="basicApp" ng-controller="basicController" ng-cloak>
+-->
+
+<body>
+    <div id="session-test-div"></div>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-messages.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
+    <script src="{{url_for('static',filename = 'js/jquery-1.11.1.min.js')}}"></script>
+    <script src="{{url_for('static',filename = 'js/front.js')}}"></script>
+    <script type="text/javascript">
+        var currentUserId = sessionStorage.getItem("currentUserId");
+        document.getElementById("session-test-div").innerHTML = "Hello, " + currentUserId + "!";
+    </script>
+</body>
+
+</html>

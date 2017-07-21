@@ -30,6 +30,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         $scope.userPassword = "";
         $scope.userPasswordCheck = "";
         $scope.userBirthday = "";
+        $scope.userEmail = "";
 
         //크로스 도메인을 위한 함수
         function convertToCorsUrl(url) {
@@ -95,11 +96,12 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
                 $scope.showAlertDialog("로그인 실패", "ID 또는 비밀번호가 올바르지 않습니다.");
             } else {
                 document.forms['login-form'].submit();
+                sessionStorage.setItem("currentUserId", $scope.loginId);
             }
         };
 
-        $scope.clickAgreeButton = function() {
-            if ($scope.userId == "" || $scope.userPassword == "" || $scope.userPasswordCheck == "" || $scope.userBirthday == "") {
+        $scope.clickSignUpOkButton = function() {
+            if ($scope.userId == "" || $scope.userPassword == "" || $scope.userPasswordCheck == "" || $scope.userBirthday == "" || $scope.userEmail == "") {
                 $scope.showAlertDialog("회원가입 실패", "모든 정보를 입력해야 합니다.");
             } else if ($scope.userPassword != $scope.userPasswordCheck) {
                 $scope.showAlertDialog("회원가입 실패", "비밀번호가 일치하지 않습니다.");
@@ -110,11 +112,43 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
             }
         }
 
+        $scope.hideLoginWindowFlag = false;
+        $scope.hidePolicyWindowFlag = true;
+        $scope.hideSignUpWindowFlag = true;
+
+        //로그인 화면에서 "회원가입" 버튼을 눌렀을 때의 동작을 정의하기 위한 함수.
+        //이용약관 화면 출력.
+        $scope.clickSignUpButton = function() {
+            $scope.hideLoginWindowFlag = true;
+            $scope.hidePolicyWindowFlag = false;
+            $scope.hideSignUpWindowFlag = true;
+            $scope.loginId = "";
+            $scope.loginPassword = "";
+        };
+
+        //이용약관 화면에서 "동의" 버튼을 눌렀을 때의 동작을 정의하기 위한 함수.
+        //화원가입 화면 출력.
+        $scope.clickAgreeButton = function() {
+            $scope.hideLoginWindowFlag = true;
+            $scope.hidePolicyWindowFlag = true;
+            $scope.hideSignUpWindowFlag = false;
+        };
+
+        //이용약관 화면에서 "취소" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
+        //로그인 화면 출력.
+        $scope.clickDisagreeButton = function() {
+            $scope.hideLoginWindowFlag = false;
+            $scope.hidePolicyWindowFlag = true;
+            $scope.hideSignUpWindowFlag = true;
+        };
+
         $scope.login_result = function(err_code) {
             if (err_code == "id incorrect") {
                 $scope.showAlertDialog("로그인 실패", "ID가 올바르지 않습니다.");
+                sessionStorage.removeItem("currentUserId");
             } else if (err_code == "pwd incorrect") {
                 $scope.showAlertDialog("로그인 실패", "비밀번호가 올바르지 않습니다.");
+                sessionStorage.removeItem("currentUserId");
             } else if (err_code == "success") {
                 $scope.showAlertDialog("로그인 성공", "로그인에 성공하였습니다.");
             }
@@ -126,6 +160,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
                 $scope.showAlertDialog("회원가입 완료", "회원가입을 완료하였습니다.");
             } else if (err_code == "existed id") {
                 $scope.showAlertDialog("회원가입 실패", "이미 존재하는 ID입니다.");
+                $scope.clickAgreeButton();
             }
         }
 
@@ -133,33 +168,6 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         setLoginErrCode("none");
         $scope.sign_up_result($scope.signUpErrorCode);
         setSignUpErrCode("none");
-
-        $scope.hide = false;
-        $scope.hide2 = false;
-        $scope.hide3 = false;
-
-        //로그인 화면에서 "회원가입" 버튼을 눌렀을 때의 동작을 정의하기 위한 함수.
-        //이용약관 화면 출력.
-        $scope.signUp = function() {
-            $scope.hide = true;
-            $scope.hide1 = true;
-            $scope.loginId = "";
-            $scope.loginPassword = "";
-        };
-
-        //이용약관 화면에서 "동의" 버튼을 눌렀을 때의 동작을 정의하기 위한 함수.
-        //화원가입 화면 출력.
-        $scope.agree = function() {
-            $scope.hide1 = false;
-            $scope.hide2 = true;
-        };
-
-        //이용약관 화면에서 "취소" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
-        //로그인 화면 출력.
-        $scope.disagree = function() {
-            $scope.hide = false;
-            $scope.hide1 = false;
-        };
     }])
     //UnhandledRejection 오류 해결(AngularJS 1.6.x 버그)
     //HTML에서 변수 바인딩 문자를 {{, }}에서 [[, ]]로 교체(Flask Jinja2와 충돌)

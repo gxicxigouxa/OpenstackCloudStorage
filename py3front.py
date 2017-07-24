@@ -42,7 +42,8 @@ from werkzeug import secure_filename
 import pefile
 import shutil
 from sklearn.linear_model import ElasticNet
-from sklearn.cross_validation import KFold
+#from sklearn.cross_validation import KFold
+from sklearn.model_selection import KFold
 from sklearn.feature_extraction.text import CountVectorizer
 import sys
 import nltk.stem
@@ -215,7 +216,18 @@ def chksignup():
 			######Role Create ###########################
 			#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
 			response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
-			print(response)
+			print(response)			
+			if not os.path.exists("/home/gxicxigouxa/myproject/users/" + signUpId):
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId)
+				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + " success.")
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/")
+				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/ success.")
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/")
+				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/ success.")
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/malware/")
+				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/malware/ success.")
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/notmalware/")
+				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/notmalware/ success.")
 			###########################################
 			return render_template('oldlogin.html',login_err_code ="none", sign_up_err_code = "success")
 		else:
@@ -224,11 +236,9 @@ def chksignup():
 
 @app.route('/basicpage')
 def showbasicpage():
-
-	
-
 	return render_template("basicpage.html")
 	#return "ok"
+
 @app.route('/urltest')
 def urltest():
 	

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <title>
+        관리자 모니터링
+    </title>
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+    <link rel="stylesheet" href="util/ui-grid.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+
+<body ng-app="ManagerMonitoringApp" ng-controller="ManagerMonitoringCtrl" ng-cloak>
+    <div class="page-container">
+        <div class="manager_monitoring-header">
+            <h2>관리자 모니터링</h2>
+        </div>
+        <div class="manager_monitoring-container">
+            <md-tabs md-dynamic-height md-border-bottom>
+                <md-tab label="회원 목록">
+                    <div ui-grid="userGridData" ui-grid-selection ui-grid-move-columns ui-grid-resize-columns class="grid"></div>
+                    <md-button class="md-raised md-warn" ng-disabled="isNotSelectedUser()" ng-click="showConfirmRemoveUserDialog($event)">회원 강제 탈퇴</md-button>
+                    <md-button class="md-warn" ng-disabled="!isSelectedOnlyOneUser()" ng-click="showToggleUserPermissionDialog()">권한 변경</md-button>
+                    <md-button ng-click="refreshGrid()">갱신</md-button>
+                </md-tab>
+            </md-tabs>
+            <div class="manager_monitoring-button">
+                <md-button class="md-raised md-warn" ng-click="logout()">로그아웃</md-button>
+            </div>
+        </div>
+    </div>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+    <script src="util/ui-grid.min.js"></script>
+    <script type="text/javascript">
+
+        var selectedMember;
+    //오픈스택 API를 사용하기 위해 필요한 XMLHttpRequest객체를 얻기 위한 함수
+    function getXMLHttpRequest() {
+        if (window.ActiveXObject) {
+            try {
+                return new ActiveXObject("Msxml2.XMLHTTP");
+            } catch (e1) {
+                try {
+                    return new ActiveXObject("Microsoft.XMLHTTP");
+                } catch (e1) {
+                    return null;
+                }
+            }
+        } else if (window.XMLHttpRequest) {
+            return new XMLHttpRequest();
+        } else {
+            return null;
+        }
+    };
+    //관리자 모니터링에서 권한을 null에서 member로 변경하는 함수
+    function convertnulltomember() {
+        xhr = getXMLHttpRequest();
+        xhr1 = getXMLHttpRequest();
+        xhr.open("DELETE", "http://164.125.70.21:3000/member/" + selectedMember.mem_name, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send();
+        xhr1.open("POST", "http://164.125.70.21:3000/member", true);
+        xhr1.setRequestHeader("Content-Type", "application/json");
+        xhr1.send(JSON.stringify({
+                "mem_id": selectedMember.mem_id,
+                "mem_password": selectedMember.mem_password,
+                "mem_name": selectedMember.mem_name,
+                "mem_email": selectedMember.mem_email,
+                "mem_phoneNumber": selectedMember.mem_phoneNumber,
+                "mem_address": selectedMember.mem_address,
+                "mem_project_id": selectedMember.mem_project_id,
+                "mem_permission": "user"
+            }
+        ));
+    };
+    //관리자 모니터링에서 권한을 member에서 admin으로 변경하는 함수
+    function convertmembertoadmin() {
+        xhr = getXMLHttpRequest();
+        xhr1 = getXMLHttpRequest();
+        xhr.open("DELETE", "http://164.125.70.21:3000/member/" + selectedMember.mem_name, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send();
+        xhr1.open("POST", "http://164.125.70.21:3000/member", true);
+        xhr1.setRequestHeader("Content-Type", "application/json");
+        xhr1.send(JSON.stringify({
+                "mem_id": selectedMember.mem_id,
+                "mem_password": selectedMember.mem_password,
+                "mem_name": selectedMember.mem_name,
+                "mem_email": selectedMember.mem_email,
+                "mem_phoneNumber": selectedMember.mem_phoneNumber,
+                "mem_address": selectedMember.mem_address,
+                "mem_project_id": selectedMember.mem_project_id,
+                "mem_permission": "admin"
+            }
+        ));
+    };
+    //관리자 모니터링에서 권한을 admin에서 member로 변경하는 함수
+    function convertadmintomember() {
+        xhr = getXMLHttpRequest();
+        xhr1 = getXMLHttpRequest();
+        xhr.open("DELETE", "http://164.125.70.21:3000/member/" + selectedMember.mem_name, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send();
+        xhr1.open("POST", "http://164.125.70.21:3000/member", true);
+        xhr1.setRequestHeader("Content-Type", "application/json");
+        xhr1.send(JSON.stringify({
+                "mem_id": selectedMember.mem_id,
+                "mem_password": selectedMember.mem_password,
+                "mem_name": selectedMember.mem_name,
+                "mem_email": selectedMember.mem_email,
+                "mem_phoneNumber": selectedMember.mem_phoneNumber,
+                "mem_address": selectedMember.mem_address,
+                "mem_project_id": selectedMember.mem_project_id,
+                "mem_permission": "user"
+            }
+        ));
+    };
+    //AngularJS를 이용해 HTML을 제어하기 위한 모듈.
+    //매개 변수로 관리자 모니터링에 대한 애플리케이션과 사용할 외부 모듈로 이루어진 배열을 전달.
+    //ngMaterial: Material 디자인에 관한 모듈.
+    //ui.grid: 자료들을 나타낼 grid에 관한 모듈.
+    //ui.grid.selection: ui.grid의 추가 모듈. grid의 특정 열을 선택 가능.
+    //ui.grid.moveColumns: ui.grid의 추가 모듈. grid의 열 순서를 변경 가능.
+    //ui.grid.resizeColumns: ui.grid의 추가 모듈. grid의 열 폭을 변경 가능.
+    angular.module('ManagerMonitoringApp', ['ngMaterial', 'ui.grid', 'ui.grid.selection', 'ui.grid.moveColumns', 'ui.grid.resizeColumns'])
+        //해당 모듈에 대한 동작을 결정하기 위한 컨트롤러.
+        //매개 변수로 관리자 모니터링에 사용할 컨트롤러와 사용할 변수, 동작에 대한 함수를 전달.
+        //$scope: 컨트롤러 내에서 AngularJS에 의해 binding될 변수 및 함수들을 저장.
+        //$mdDialog: AngularJS에 대한 Native Material 디자인이 적용된 다이얼로그를 이용하기 위한 변수.
+        //$window: 창 전환에 관한 기능을 이용하기 위한 변수.
+        .controller('ManagerMonitoringCtrl', ['$scope', '$mdDialog', '$window', function($scope, $mdDialog, $window) {
+            var dburl = "http://164.125.70.21";
+            //매개 변수로 받은 사용자 토큰을 세션에 저장하기 위한 함수.
+            function setTokenToSession(tokenValue) {
+                if (window.sessionStorage) {
+                    sessionStorage.setItem('xAuthToken', tokenValue);
+                }
+            };
+
+            //세션에 저장된 사용자 토큰을 return.
+            function getTokenFromSession() {
+                if (window.sessionStorage) {
+                    return sessionStorage.getItem('xAuthToken');
+                } else {
+                    return null;
+                }
+            };
+
+            var selectedUsers = [];
+            //회원의 grid에 대한 속성 부여.
+            $scope.userGridData = {
+                //마우스로 grid에 보이는 데이터 선택 가능.
+                enableRowSelection: true,
+                //데이터 선택을 위해 따로 앞쪽에 checkbox 만들지 않음.
+                enableRowHeaderSelection: false,
+                //표시할 데이터.
+                data: 'userGridData.data',
+                //데이터 열 정의.
+                //데이터베이스에서 날라오는 데이터의 JSON 형식과 맞춰서 결정.
+                columnDefs: [{
+                    field: 'mem_project_id',
+                    displayName: '프로젝트'
+                }, {
+                    field: 'mem_permission',
+                    displayName: '권한'
+                }, {
+                    field: 'mem_name',
+                    displayName: '이름'
+                }, {
+                    field: 'mem_password',
+                    displayName: '비밀번호'
+                }, {
+                    field: 'mem_email',
+                    displayName: '이메일'
+                }, {
+                    field: 'mem_id',
+                    displayName: 'ID'
+                }],
+                //grid에 대한 callback 함수를 정의.
+                //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 회원 구분 가능.
+                onRegisterApi: function(gridApi) {
+                    $scope.gridApi1 = gridApi;
+                    gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
+                        $scope.selectedUsers = gridApi.selection.getSelectedRows();
+                        selectedUsers = $scope.selectedUsers;
+                    });
+                    gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
+                        $scope.selectedUsers = gridApi.selection.getSelectedRows();
+                        selectedUsers = $scope.selectedUsers;
+                    })
+                }
+            };
+
+            $scope.selectedUsers = [];
+            //회원 grid에 대해 한 개의 열만 선택되었는지를 판단.
+            $scope.isSelectedOnlyOneUser = function() {
+                if ($scope.selectedUsers.length == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            //회원 grid에 대해 선택된 열이 없는지를 판단.
+            $scope.isNotSelectedUser = function() {
+                if ($scope.selectedUsers.length == 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            //이하 데이터 받는 부분.
+            var xhr1 = null;
+            function getXMLHttpRequest() {
+                if (window.ActiveXObject) {
+                    try {
+                        return new ActiveXObject("Msxml2.XMLHTTP");
+                    } catch (e1) {
+                        try {
+                            return new ActiveXObject("Microsoft.XMLHTTP");
+                        } catch (e1) {
+                            return null;
+                        }
+                    }
+                } else if (window.XMLHttpRequest) {
+                    return new XMLHttpRequest();
+                } else {
+                    return null;
+                }
+            };
+
+            xhr1 = getXMLHttpRequest();
+            // Use JSFiddle logo as a sample image to avoid complicating
+            // this example with cross-domain issues.
+            xhr1.open("GET", dburl + ":3000/member", true);
+            // Ask for the result as an ArrayBuffer.
+            xhr1.setRequestHeader("Content-Type", "application/json");
+            //회원에 대한 권한을 표현하기 위한 변수.
+            //admin: 관리자.
+            //Member: 사용자.
+            //nullRole: 권한 없음(초기 상태).
+            var roleId = {
+                admin: "89799aafdaed465a8ec2bd19973696ff",
+                Member: "8d57cf40791a48c59bbeae6a4cd72bc7",
+                nullRole: "9fe2ff9ee4384b1894a90878d3e92bab"
+            };
+            xhr1.onload = function(e) {
+                //DB에서 JSON text 형식으로 받아오면 JSON으로 parsing한 다음 바로 적용.
+                var jsontext = this.response;
+                var receivedUserGridData = JSON.parse(jsontext);
+                $scope.userGridData.data = receivedUserGridData;
+            };
+
+            xhr1.send();
+            //여러 데이터 선택 가능.
+            $scope.userGridData.multiSelect = true;
+            //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 가능.
+            $scope.userGridData.modifierKeysToMultiSelect = true;
+            //한번 더 선택하면 선택 취소.
+            $scope.userGridData.noUnselect = false;
+            //회원 grid에 대해 선택한 회원의 권한을 변경하기 위한 함수.
+            //만일 해당 회원의 권한이 없거나 관리자라면 사용자로, 권한이 관리자라면 사용자로 변경.
+            $scope.toggleUserPermission = function() {
+                if ($scope.gridApi1.selection.getSelectedRows()[0].mem_permission == "user") {
+                    angular.forEach($scope.gridApi1.selection.getSelectedRows(), function(data, index) {
+                        data.mem_permission = "admin";
+                        var xhr = null;
+                        var xhr1 = null;
+                        xhr = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(삭제요청)
+                        xhr1 = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(갱신요청)
+                        selectedMember = data;
+                        xhr1.open("DELETE", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.Member, true);
+                        xhr.open("PUT", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.admin, true);
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.setRequestHeader("Content-Type", "application/json");
+                        xhr1.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.onload = function(e) {
+                            var jsontext = xhr.responseText;
+                            xhr.send();
+                            convertmembertoadmin();
+                        };
+                        xhr1.send();
+                    });
+                } else if ($scope.gridApi1.selection.getSelectedRows()[0].mem_permission == "admin") {
+                    angular.forEach($scope.gridApi1.selection.getSelectedRows(), function(data, index) {
+                        data.mem_permission = "user";
+                        var xhr = null;
+                        var xhr1 = null;
+                        xhr = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(삭제요청)
+                        xhr1 = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(갱신요청)
+                        selectedMember = data;
+                        xhr1.open("DELETE", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.admin, true);
+                        xhr.open("PUT", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.Member, true);
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.setRequestHeader("Content-Type", "application/json");
+                        xhr1.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.onload = function(e) {
+                            // Obtain a blob: URL for the image data.
+                            var jsontext = xhr.responseText;
+                            xhr.send();
+                            convertadmintomember();
+                        };
+                        xhr1.send();
+                    });
+                } else {
+                    angular.forEach($scope.gridApi1.selection.getSelectedRows(), function(data, index) {
+                        data.mem_permission = "user";
+                        var xhr = null;
+                        var xhr1 = null;
+                        xhr = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(갱신요청)
+                        xhr1 = getXMLHttpRequest(); //오픈스택 서버로 권한을 변경하기 위해 요청할때 사용할 객체(갱신요청)
+                        selectedMember = data;
+                        xhr1.open("DELETE", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.nullRole, true);
+                        xhr.open("PUT", "http://164.125.70.14:35357/v3/projects/" + data.mem_project_id + "/users/" + data.mem_id + "/roles/" + roleId.Member, true);
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.setRequestHeader("Content-Type", "application/json");
+                        xhr1.setRequestHeader("x-auth-token", getTokenFromSession());
+                        xhr1.onload = function(e) {
+                            var jsontext = xhr.responseText;
+                            xhr.send();
+                            convertnulltomember();
+                        };
+                        xhr1.send();
+                    });
+                }
+            };
+
+            //페이지 초기화 함수.
+            $scope.refreshGrid = function() {
+                location.reload(false);
+            };
+
+            //로그아웃 함수.
+            //로그인 화면으로 전환.
+            $scope.logout = function() {
+                $window.open("./login.html", "_self");
+            }
+
+            //회원 grid에서 선택한 회원의 권한 변경 시도 시 출력되는 다이얼로그를 호출하기 위한 함수.
+            //"예"를 누르면 회원 권한 변경.
+            $scope.showToggleUserPermissionDialog = function(event) {
+                var confirm = $mdDialog.confirm()
+                    .title("권한 변경")
+                    .textContent("선택한 회원의 권한을 변경합니다.")
+                    .ariaLabel("toggleUserPermissionContent")
+                    .targetEvent(event)
+                    .ok("예")
+                    .cancel("아니오");
+                $mdDialog.show(confirm).then(function() {
+                    $scope.toggleUserPermission();
+                }, function() {});
+            };
+
+            //회원 grid에 대해 선택한 회원을 탈퇴시키기 위한 함수.
+            $scope.removeSelectedUsers = function() {
+                getout=getXMLHttpRequest(); // 데이터베이스 삭제요청을 하기 위해 필요한 객체
+                getout.open("DELETE", "http://164.125.70.21:3000/member/" + $scope.selectedUsers[0].mem_name, true);
+                getout.setRequestHeader("Content-Type", "application/json");
+                getout.setRequestHeader("x-auth-token", getTokenFromSession());
+                getout.send();
+                angular.forEach($scope.gridApi1.selection.getSelectedRows(), function(data, index) {
+                    $scope.userGridData.data.splice($scope.userGridData.data.lastIndexOf(data), 1);
+                });
+                $scope.gridApi1.selection.clearSelectedRows();
+            };
+
+            //회원 grid에서 선택한 회원 탈퇴 시도 시 출력되는 다이얼로그를 호출하기 위한 함수.
+            //"예"를 누르면 회원 탈퇴. 
+            $scope.showConfirmRemoveUserDialog = function(event) {
+                var confirm = $mdDialog.confirm()
+                    .title("회월 강제탈퇴")
+                    .textContent("정말로 선택한 회원을 탈퇴시키겠습니까?")
+                    .ariaLabel("confirmRemoveUserDialogContent")
+                    .targetEvent(event)
+                    .ok("예")
+                    .cancel("아니오");
+                $mdDialog.show(confirm).then(function() {
+                    $scope.removeSelectedUsers();
+                }, function() {});
+            };
+        }]);
+    </script>
+</body>
+
+</html>

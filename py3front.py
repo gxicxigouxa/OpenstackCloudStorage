@@ -34,7 +34,7 @@ import scipy as sp
 from sklearn.linear_model import LinearRegression
 import numpy as np
 from flask import Flask
-from flask import jsonify,request,redirect,url_for,send_from_directory,render_template,url_for,send_file,make_response
+from flask import jsonify,request,redirect,url_for,send_from_directory,render_template,url_for,send_file,make_response, session
 from flaskext.mysql import MySQL
 import json
 import os
@@ -121,6 +121,7 @@ mysql= MySQL()
 app.config['MYSQL_DATABASE_USER']='root'
 app.config['MYSQL_DATABASE_PASSWORD']='root'
 app.config['MYSQL_DATABASE_DB']='jhj'
+app.secret_key = "OPENSTACK_SECRET_KEY"
 mysql.init_app(app)
 
 @app.route('/login')
@@ -154,9 +155,33 @@ def chklogin():
 			return render_template('oldlogin.html',login_err_code ="id incorrect", sign_up_err_code = "none")
 		else:
 			if(result[0]["pwd"]==userPwd):#pwd is correct
-				return redirect('/basicpage')
+				#토큰 가져오기
+				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
+				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
+				headers = {'content-type':'application/json'}
+				response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
+				json_data = json.loads(response.text)
+
+				token=json_data["access"]["token"]["id"]
+				print("token: " + token)
+				session["token"] = token
+
+				#토큰에 대한 컨테이너 요청
+				container_url ='http://125.132.100.206:8080/v1/AUTH_'+ userId
+				container_Name= "test"
+				headers  ={'x-auth-token':token,'content-type':'application/json'}
+
+				response = requests.get(container_url,headers=headers)
+				print(container_url)
+				#print(response.text.split("\n"))
+				storageList = response.text.split("\n")[:-1]
+				storageListString = "/".join(storageList)
+				print(storageList)
+				session["storageListString"] = storageListString
+				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
+
 
 @app.route('/signupchk', methods=['POST','GET'])
 def chksignup():
@@ -268,13 +293,183 @@ def urltest():
 	print(json_dict)
 	user_id =json_dict['user']['id']# id is not real id (signup id is user nam ) ex>8cc705d2c8bc4a1f8874f50eee32fc92
 
-
-
 	#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
 	response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
 	print(response)
 
 	return "ok"
+
+
+@app.route('/spamtest')
+def spamtest():
+	return render_template("spamtest.html")
+
+'''
+@app.route('/spamtestchk', methods=['GET', 'POST'])
+def spamtestchk():
+	if request.method == 'POST':
+		file = request.form['file-input-button']
+		print(file)
+		virusTotalApiKey = "8d7e67814ea6ab5362bec87cd0b800a131b32a02042978a66275783f8263e5de"
+		params = {'apikey': virusTotalApiKey}
+		files = {'file': (secure_filename(file.filename), file)}
+		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
+		json_response = response.json()
+		print(json_response)
+		return json_response
+	else:
+		return render_template("spamtest.html")
+'''
+import requests
+API_KEY='bd4e869950aec438845db005416179e0992a76d1692247c5b468b95d356afce8'
+detected_cnt=0
+Total_num=0
+
+def scan_file(APIKEY,FilePath):
+	while(True):
+		params = {'apikey': API_KEY}
+		files = {'file': (FilePath, open(FilePath, 'rb'))}
+		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
+		scan_response = response.json()
+		if(scan_response['response_code']==1):
+			return scan_response
+		elif(scan_response['response_code']==-2):
+			print("Wait For 30 sec")
+			time.sleep(30)
+			continue;
+			
+		elif(scan_response['response_code']==-1):
+			print("ERROR")
+
+			return 'error';
+		else:#0
+			print("NO data !! ")
+			return "NO Data";
+
+def report_file(APIKEY,Resource):
+	while(True):
+		global detected_cnt
+		global Total_num
+		params = {'apikey': API_KEY, 'resource': Resource}
+		headers = {
+		  "Accept-Encoding": "gzip, deflate",
+		  "User-Agent" : "gzip,  My Python requests library example client or username"
+		  }
+		response = requests.get('https://www.virustotal.com/vtapi/v2/file/report',
+		  params=params, headers=headers)
+		if(response.text==""):
+			return "lots of requests"
+		json_response = response.json()
+		print(json_response)
+	
+		scan = json_response.get('scans',{})
+
+		scan_keys= scan.keys();
+		print(scan_keys)
+		print(json_response)
+		if(json_response['response_code'] == 1):
+			for key in scan_keys:
+				print(' %s : %s  %s' %(key,scan[key]['detected'],scan[key]['result']))
+				Total_num+=1
+				if (scan[key]['detected'] is True):
+					detected_cnt+=1
+			print("Total NUM : %d" %(Total_num))
+			print("Deceted NUM: %d " %(detected_cnt))
+			return json_response
+			
+		elif(json_response['response_code'] == -2):
+			print("Still Analysis.... Wait for 20 sec")
+			time.sleep(20)
+			continue;
+		elif(scan_response['response_code']==-1):
+			print("ERROR")
+
+			return 'error';
+		else:# 0
+			print("NO data !! ")
+			return "NO Data";
+
+
+'''
+@app.route('/classifymal',methods=['POST'])
+def classifyMal():
+	if request.method=="POST":
+		file = request.files['file']  # in []  there must be name = 'file'??? search
+		if file and allowed_file(file.filename):
+			filename = secure_filename(file.filename)
+			file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
+
+		scan_response=scan_file(API_KEY,UPLOAD_FOLDER+'/'+file.filename)
+		#print(scan_response)
+		resource = scan_response['resource']
+		print(resource)
+
+		spamdir_list = os.listdir("/home/gxicxigouxa/myproject/malware")
+		answer= report_file(API_KEY,resource)
+		if(answer == "lots of requests"):
+			print("do it after 1minutes after")
+			return render_template('spam.html',spamdir_list=spamdir_list,state_code=1)#1 : lots of request
+		
+		print (Total_num)
+		print (detected_cnt)
+		print(detected_cnt/Total_num)
+		
+		if(scan_response=="NO Data"):
+			shutil.move(UPLOAD_FOLDER+"/"+filename,UPLOAD_FOLDER+"/malware/malware/"+file.filename)
+			#return "There is no data in DB so go to malware directory"# go to spam suspect
+			return render_template('spam.html',spamdir_list=spamdir_list,state_code=2)# 2: suspect malware
+		else:
+			if(detected_cnt/Total_num>0.1):#malware suspect
+				shutil.move(UPLOAD_FOLDER+"/"+filename,UPLOAD_FOLDER+"/malware/malware/"+filename)
+				#return "IS MALWARE(DownFile's dll!= DB's dll)"
+				return render_template('spam.html',spamdir_list=spamdir_list,state_code=2)# 2: suspect malware					
+			else:#not malware
+				shutil.move(UPLOAD_FOLDER+"/"+filename,UPLOAD_FOLDER+"/malware/notmalware/"+filename)
+				#return "IS NOT MALWARE (DownFile's dll== DB's dll)"
+				return render_template('spam.html',spamdir_list=spamdir_list,state_code=3)# 3: no malware
+
+'''
+
+@app.route('/storage')
+def storagepage():
+	print("session token: " + session["token"])
+	print("session storageListString: " + session["storageListString"])
+	
+	return render_template("storage.html", token = session["token"], storageListString = session["storageListString"])
+
+@app.route('/dialog/<path:path>')
+def serve_dialog(path):
+    return render_template('/dialog/{}'.format(path))
+
+#TODO.
+@app.route('/createcontainer', methods=['POST'])
+def createcontainer():
+	"""컨테이너 생성에 관한 코드
+	import requests
+	tenant_name ='testuser'
+	url ='http://125.132.100.206:8080/v1/AUTH_'+tenant_name
+	container_Name= "testContainer2s"
+	headers  ={'x-auth-token':'6e21facd1ab246f09dd441ae99154003','x-container-read':'.r:*'}
+
+	response = requests.put(url+'/'+container_Name,headers=headers)
+	print(url+'/'+container_Name)
+	print(response)
+	"""
+	data = json.loads(request.data.decode())
+	newContainerName = data["newContainerName"]
+	currentUserId = data["currentUserId"]
+	currentUserToken = data["currentUserToken"]
+	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)
+	
+	url ='http://125.132.100.206:8080/v1/AUTH_'+ currentUserId
+	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
+
+	response = requests.put(url+ '/' +newContainerName, headers=headers)
+	print(url+'/'+ newContainerName)
+	print(response)
+	print("newContainerName : " + newContainerName)
+	return newContainerName + " create success"
+
 
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

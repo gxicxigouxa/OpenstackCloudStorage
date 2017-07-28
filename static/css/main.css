@@ -1,0 +1,285 @@
+html,
+body {
+    height: 100%
+}
+
+body {
+    margin: 0
+}
+
+.sign_up-container md-content {
+    background-color: transparent !important;
+}
+
+.sign_up-container md-content md-tabs {
+    background: #f6f6f6;
+    border: 1px solid #e1e1e1;
+}
+
+.sign_up-container md-content md-tabs md-tabs-wrapper {
+    background: white;
+}
+
+.sign_up-container md-content h1:first-child {
+    margin-top: 0;
+}
+
+.page-container {
+    margin: auto;
+    width: 80%;
+    height: 600px;
+}
+
+.sign_up-button,
+.registration-button,
+.main_screen-button,
+.manager_monitoring-button {
+    float: right;
+}
+
+.folder-content-container {
+    width: 50%;
+}
+
+.registration-container {
+    width: 50%;
+    margin: auto;
+}
+
+.registration-button {
+    margin: auto;
+}
+
+.login-dialog-content-container #popupContainer {
+    position: relative;
+}
+
+.login-dialog-content-container .footer {
+    width: 100%;
+    text-align: center;
+    margin-left: 20px;
+}
+
+.login-dialog-content-container .footer {
+    font-size: 0.8em;
+    margin-top: 50px;
+}
+
+.login-dialog-content-container button {
+    width: 200px;
+}
+
+.login-dialog-content-container div#status {
+    color: #c60008;
+}
+
+.login-dialog-content-container md-checkbox {
+    margin-bottom: 0;
+}
+
+.file-upload-content-container .file-download-content-container .storage-information-content-container {
+    width: 50%;
+}
+
+.to-upload-files-grid {
+    height: 150px;
+}
+
+.storage-information-chart {
+    width: 600px;
+    height: 600px;
+}
+
+.manager_monitoring-container md-tabs {
+    background: #f6f6f6;
+    border: 1px solid #e1e1e1;
+}
+
+.manager_monitoring-container md-tabs md-tabs-wrapper {
+    background: white;
+}
+
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: rgb(28, 184, 65);
+    /* this is a green */
+}
+
+.button-error {
+    background: rgb(202, 60, 60);
+    /* this is a maroon */
+}
+
+.button-warning {
+    background: rgb(223, 117, 20);
+    /* this is an orange */
+}
+
+.button-secondary {
+    background: rgb(66, 184, 221);
+    /* this is a light blue */
+}
+
+.button_hover {
+    border: none;
+    color: #FFFFFF;
+    text-align: center;
+    transition: all 0.5s;
+    cursor: pointer;
+}
+
+.button_hover span {
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: 0.5s;
+}
+
+.button_hover span:after {
+    content: '<';
+    position: absolute;
+    opacity: 0;
+    top: 0;
+    left: -20px;
+    transition: 0.5s;
+}
+
+.button_hover:hover span {
+    padding-left: 25px;
+}
+
+.button_hover:hover span:after {
+    opacity: 1;
+    left: 0;
+}
+
+.pure-button-primary {
+    background-color: #0480be;
+}
+
+
+/* The Modal (background) */
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgb(0, 0, 0);
+    /* Fallback color */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black w/ opacity */
+    -webkit-animation-name: fadeIn;
+    /* Fade in the background */
+    -webkit-animation-duration: 0.4s;
+    animation-name: fadeIn;
+    animation-duration: 0.4s
+}
+
+
+/* Modal Content */
+
+.modal-content {
+    position: fixed;
+    bottom: 0;
+    background-color: #fefefe;
+    width: 100%;
+    -webkit-animation-name: slideIn;
+    -webkit-animation-duration: 0.4s;
+    animation-name: slideIn;
+    animation-duration: 0.4s
+}
+
+
+/* The Close Button */
+
+.close {
+    color: white;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-header {
+    padding: 2px 16px;
+    background-color: #0480be;
+    color: white;
+}
+
+.modal-body {
+    padding: 2px 16px;
+}
+
+.modal-footer {
+    padding: 2px 16px;
+    background-color: #5cb85c;
+    color: white;
+}
+
+
+/* Add Animation */
+
+@-webkit-keyframes slideIn {
+    from {
+        bottom: -300px;
+        opacity: 0
+    }
+    to {
+        bottom: 0;
+        opacity: 1
+    }
+}
+
+@keyframes slideIn {
+    from {
+        bottom: -300px;
+        opacity: 0
+    }
+    to {
+        bottom: 0;
+        opacity: 1
+    }
+}
+
+@-webkit-keyframes fadeIn {
+    from {
+        opacity: 0
+    }
+    to {
+        opacity: 1
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0
+    }
+    to {
+        opacity: 1
+    }
+}

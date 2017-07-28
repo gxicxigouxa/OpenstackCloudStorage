@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Spam Test</title>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+
+<body>
+    <div id="main-content-div" layout="row" ng-app="spamTestApp" ng-controller="spamTestController" ng-cloak>
+        <md-content>
+            <form action="/classifymal" method="POST" name="spam-test-form">
+                <div id="select-file-div" layout="column">
+                    <input id="file-input-button" name="file-input-button" type="file" class="ng-hide" onchange="angular.element(this).scope().selectFile(this)" aria-label="file-input"></input>
+                    <label for="file-input-button" class="md-button md-reised">파일 선택</label>
+                    <p>파일명: [[fileName]]</p>
+                </div>
+                <div id="submit-button-div">
+                    <md-button type="submit">악성 코드 검사</md-button>
+                </div>
+            </form>
+        </md-content>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-messages.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
+    <script src="{{url_for('static',filename = 'js/jquery-1.11.1.min.js')}}"></script>
+    <script type="text/javascript">
+        var signUpApp = angular.module('spamTestApp', ['ngMaterial']);
+        signUpApp.controller('spamTestController', ['$scope', function($scope) {
+            $scope.fileName = "";
+            $scope.selectFile = function(element) {
+                console.log(element.files[0].name);
+                $scope.fileName = element.files[0].name;
+            }
+        }]);
+        signUpApp.config(['$qProvider', '$interpolateProvider', function($qProvider, $interpolateProvider) {
+            $qProvider.errorOnUnhandledRejections(false);
+            $interpolateProvider.startSymbol('[[').endSymbol(']]');
+        }]);
+    </script>
+</body>
+
+</html>

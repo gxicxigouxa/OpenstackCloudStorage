@@ -165,19 +165,7 @@ def chklogin():
 				token=json_data["access"]["token"]["id"]
 				print("token: " + token)
 				session["token"] = token
-
-				#토큰에 대한 컨테이너 요청
-				container_url ='http://125.132.100.206:8080/v1/AUTH_'+ userId
-				container_Name= "test"
-				headers  ={'x-auth-token':token,'content-type':'application/json'}
-
-				response = requests.get(container_url,headers=headers)
-				print(container_url)
-				#print(response.text.split("\n"))
-				storageList = response.text.split("\n")[:-1]
-				storageListString = "/".join(storageList)
-				print(storageList)
-				session["storageListString"] = storageListString
+				session["userId"] = userId
 				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
@@ -432,10 +420,32 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
+	#######get the admin token
+	headers = {"content-type":"application/json"}
+	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
+	print(json.dumps(data))
+	admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	print(admin_token_response)
+	json_dict= json.loads(admin_token_response.text)
+	admin_token=json_dict['access']['token']['id']
+	print(admin_token)
+	#토큰에 대한 컨테이너 목록 요청
+	container_url ='http://125.132.100.206:8080/v1/AUTH_'+ session["userId"]
+	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
+	response = requests.get(container_url,headers=headers)
+	print(container_url)
+	#print(response.text.split("\n"))
+	containerList = response.text.split("\n")[:-1]
+	#storageListString = "/".join(storageList)
+	print(containerList)
+	#session["storageListString"] = storageListString
 	print("session token: " + session["token"])
-	print("session storageListString: " + session["storageListString"])
+	print("session adminToken: " + admin_token)
+	print("session containerList: ")
+	print(containerList)
 	
-	return render_template("storage.html", token = session["token"], storageListString = session["storageListString"])
+	#return render_template("storage.html", token = session["token"], storageListString = session["storageListString"])
+	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
 
 @app.route('/dialog/<path:path>')
 def serve_dialog(path):

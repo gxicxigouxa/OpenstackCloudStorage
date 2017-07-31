@@ -97,6 +97,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
             } else {
                 document.forms['login-form'].submit();
                 sessionStorage.setItem("currentUserId", $scope.loginId);
+                sessionStorage.setItem("currentPassword", $scope.loginPassword)
             }
         };
 
@@ -146,9 +147,11 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
             if (err_code == "id incorrect") {
                 $scope.showAlertDialog("로그인 실패", "ID가 올바르지 않습니다.");
                 sessionStorage.removeItem("currentUserId");
+                sessionStorage.removeItem("currentUserPassword");
             } else if (err_code == "pwd incorrect") {
                 $scope.showAlertDialog("로그인 실패", "비밀번호가 올바르지 않습니다.");
                 sessionStorage.removeItem("currentUserId");
+                sessionStorage.removeItem("currentUserPassword");
             } else if (err_code == "success") {
                 $scope.showAlertDialog("로그인 성공", "로그인에 성공하였습니다.");
             }

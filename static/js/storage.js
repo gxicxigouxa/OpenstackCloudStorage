@@ -13,16 +13,28 @@ var strarray;
 var httpRequest = null;
 
 var token = "";
-var storageListString = "";
+var adminToken = "";
+var containerList = [];
+//var storageListString = "";
 
 function setToken(currentToken) {
     token = currentToken;
     setTokenToSession(token);
 }
 
+function setAdminToken(currentAdminToken) {
+    adminToken = currentAdminToken;
+}
+
+/*
 function setStorageListString(currentStorageListString) {
     storageListString = currentStorageListString;
 }
+*/
+function setContainerList(currentContainerList) {
+    containerList = currentContainerList;
+}
+
 
 //오픈스택 API를 사용하기 위한 xmlhttprequest 객체 생성 함수
 function getXMLHttpRequest() {
@@ -125,9 +137,12 @@ var currentUserToken;
 //$window: 창 전환에 관한 기능을 이용하기 위한 변수.
 app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window', '$http', function($scope, $mdDialog, $filter, $window, $http) {
     console.log("token: " + token);
-    console.log("storageListString: " + storageListString);
-    $scope.storageList = storageListString.split("/");
-    console.log($scope.storageList);
+    //console.log("storageListString: " + storageListString);
+    console.log("adminToken: " + adminToken);
+    console.log("containerList: ");
+    console.log(containerList);
+    //$scope.storageList = storageListString.split("/");
+    //console.log($scope.storageList);
     $scope.currentUserId = sessionStorage.getItem("currentUserId");
     $scope.currentUserPassword = sessionStorage.getItem("currentUserPassword");
     $scope.currentUserToken = getTokenFromSession();
@@ -189,10 +204,17 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     $scope.gridOptions.noUnselect = true;
     $scope.gridOptions.data = [];
 
+    /*
     //받은 스토리지 폴더 먼저 초기화.
     $scope.addExistedStorage = function() {
         for (var i = 0; i < $scope.storageList.length; ++i) {
             $scope.gridOptions.data.push({ name: $scope.storageList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+        }
+    }
+    */
+    $scope.addExistedStorage = function() {
+        for (var i = 0; i < containerList.length; ++i) {
+            $scope.gridOptions.data.push({ name: containerList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
         }
     }
     $scope.addExistedStorage();
@@ -316,13 +338,15 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             templateUrl: 'dialog/create_container_dialog.html',
             parent: angular.element(document.body),
             targetEvent: event,
-            clickOutsideToClose: true,
-            locals: { gridOptions: $scope.gridOptions },
+            clickOutsideToClose: false,
+            //locals: { gridOptions: $scope.gridOptions },
+            scope: $scope,
+            preserveScope: true
         });
     };
 
     //매개 변수로 AngularJS에 대한 전역 변수를 전달해 컨테이너 생성 다이얼로그의 컨트롤러를 구성하기 위한 함수.
-    function createContainerDialogController($scope, gridOptions) {
+    function createContainerDialogController($scope) {
         $scope.newContainerName = '';
         //만들고자 하는 컨테이너의 이름을 입력하고 "확인" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
         $scope.createNewContainer = function() {
@@ -362,12 +386,13 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 url: "/createcontainer",
                 data: {
                     "newContainerName": $scope.newContainerName,
-                    "currentUserId": $scope.currentUserId,
-                    "currentUserToken": $scope.currentUserToken
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken
                 }
             }).then(function successCallback(response) {
                 console.log("success: " + response);
-                location.reload(false);
+                $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+                $scope.$apply();
             }, function errorCallback(response) {
                 console.log("error: " + response);
             });

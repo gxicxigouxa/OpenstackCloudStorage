@@ -155,6 +155,7 @@ def chklogin():
 			return render_template('oldlogin.html',login_err_code ="id incorrect", sign_up_err_code = "none")
 		else:
 			if(result[0]["pwd"]==userPwd):#pwd is correct
+				
 				#토큰 가져오기
 				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
@@ -166,6 +167,10 @@ def chklogin():
 				print("token: " + token)
 				session["token"] = token
 				session["userId"] = userId
+				
+				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
+				#session["token"] = "0123123myuserrandomtoken3213210"
+				#session["userId"] = userId
 				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
@@ -420,6 +425,8 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
+	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
+	
 	#######get the admin token
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
@@ -443,6 +450,9 @@ def storagepage():
 	print("session adminToken: " + admin_token)
 	print("session containerList: ")
 	print(containerList)
+	
+	#admin_token = "789789789thisistempadmintoken55555"
+	#containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
 	
 	#return render_template("storage.html", token = session["token"], storageListString = session["storageListString"])
 	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)

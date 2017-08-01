@@ -157,6 +157,7 @@ def chklogin():
 			if(result[0]["pwd"]==userPwd):#pwd is correct
 				
 				#토큰 가져오기
+				
 				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
 				headers = {'content-type':'application/json'}
@@ -169,8 +170,10 @@ def chklogin():
 				session["userId"] = userId
 				
 				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
-				#session["token"] = "0123123myuserrandomtoken3213210"
-				#session["userId"] = userId
+				'''
+				session["token"] = "0123123myuserrandomtoken3213210"
+				session["userId"] = userId
+				'''
 				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
@@ -425,7 +428,6 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
-	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
 	
 	#######get the admin token
 	headers = {"content-type":"application/json"}
@@ -451,36 +453,27 @@ def storagepage():
 	print("session containerList: ")
 	print(containerList)
 	
-	#admin_token = "789789789thisistempadmintoken55555"
-	#containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
+	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
 	
-	#return render_template("storage.html", token = session["token"], storageListString = session["storageListString"])
+	admin_token = "789789789thisistempadmintoken55555"
+	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
+	
 	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
 
 @app.route('/dialog/<path:path>')
 def serve_dialog(path):
     return render_template('/dialog/{}'.format(path))
 
-#TODO.
 @app.route('/createcontainer', methods=['POST'])
 def createcontainer():
-	"""컨테이너 생성에 관한 코드
-	import requests
-	tenant_name ='testuser'
-	url ='http://125.132.100.206:8080/v1/AUTH_'+tenant_name
-	container_Name= "testContainer2s"
-	headers  ={'x-auth-token':'6e21facd1ab246f09dd441ae99154003','x-container-read':'.r:*'}
-
-	response = requests.put(url+'/'+container_Name,headers=headers)
-	print(url+'/'+container_Name)
-	print(response)
-	"""
+	
 	data = json.loads(request.data.decode())
 	newContainerName = data["newContainerName"]
 	currentUserId = data["currentUserId"]
 	currentUserToken = data["currentUserToken"]
 	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)
-	
+	#요청했다고 치고 테스트해보자.
+	'''
 	url ='http://125.132.100.206:8080/v1/AUTH_'+ currentUserId
 	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
 
@@ -488,8 +481,27 @@ def createcontainer():
 	print(url+'/'+ newContainerName)
 	print(response)
 	print("newContainerName : " + newContainerName)
+	'''
 	return newContainerName + " create success"
 
+#폴더 내 파일 리스트 요청.
+def requestFileList(userId, userToken, folderPath):
+	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
+	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId
+	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
+	response = requests.get(url+'/'+ folderPath,headers=headers)
+	print(url + '/' + folderPath)
+	print(response.text)
+	print(response.text.split("\n")[:-1])
+	return response.text.split("\n")[:-1]
+@app.route('/requestfilelist', methods = ['POST'])
+def requestfilelist():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
 
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

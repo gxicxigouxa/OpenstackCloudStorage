@@ -125,11 +125,7 @@
     <script type="text/javascript">
         setToken('{{token}}');
         setAdminToken('{{adminToken}}');
-
-        function parseJinja2UnsafeList(dirtyListString) {
-            return JSON.parse('{"data": ' + '{{containerList}}'.split("&#39;").join('"') + "}").data;
-        }
-        setContainerList(parseJinja2UnsafeList('{{containerList}}'));
+        setContainerList(JSON.parse('{"data": ' + '{{containerList}}'.split("&#39;").join('"') + "}").data);
     </script>
 </body>
 

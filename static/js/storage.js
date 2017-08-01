@@ -339,7 +339,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             parent: angular.element(document.body),
             targetEvent: event,
             clickOutsideToClose: false,
-            //locals: { gridOptions: $scope.gridOptions },
+            escapeToClose: false,
             scope: $scope,
             preserveScope: true
         });
@@ -348,55 +348,33 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     //매개 변수로 AngularJS에 대한 전역 변수를 전달해 컨테이너 생성 다이얼로그의 컨트롤러를 구성하기 위한 함수.
     function createContainerDialogController($scope) {
         $scope.newContainerName = '';
-        //만들고자 하는 컨테이너의 이름을 입력하고 "확인" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
-        $scope.createNewContainer = function() {
-            /*
-            console.log(gridOptions);
-            new_folder_name = $scope.newFolderName;
-            if (new_folder_name != '') {
-                $scope.newFolderName = '';
-                var xhr = new XMLHttpRequest(); //폴더를 생성하기 위한 객체
-                xhr.open("PUT", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + new_folder_name), true); //맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
-                //오브젝트 생성시 url에 http://164.125.70.14:8505/v1/AUTH_146ad31ee75f4fffb874ee31f35f6a92/test9/objectname
-                xhr.setRequestHeader("x-auth-token", getTokenFromSession()); //토큰 갱신될때마다 계속 바꿔주기 
-                xhr.setRequestHeader("content-type", "text/html");
-                xhr.setRequestHeader("cache-control", "no-cache");
-                xhr.send(); //null 넣어보기 ? 
-                //gridOptions.data.push({ name: new_folder_name, makeDate: "빈 폴더", numberOfObject: "0", size: formatByte(0) });
-                location.reload(false);
-                $mdDialog.cancel();
+        $scope.isDisableOkButton = true;
+        $scope.okButtonString = "확인";
+        $scope.onChangedContainerNameInput = function() {
+            if ($scope.newContainerName == '' || $scope.newContainerName == undefined) {
+                $scope.okButtonString = "확인";
+                $scope.isDisableOkButton = true;
+            } else if (containerList.indexOf($scope.newContainerName) != -1) {
+                $scope.okButtonString = "이미 사용중인 이름";
+                $scope.isDisableOkButton = true;
+            } else {
+                $scope.okButtonString = "확인";
+                $scope.isDisableOkButton = false;
             }
-            */
-            /*
-            $http.post("/createcontainer", {
-                    "newContainerName": $scope.newContainerName,
-                    "currentUserId": $scope.currentUserId,
-                    "currentUserToken": $scope.currentUserToken
-                })
-                .success(function(result) {
-                    console.log("success");
-                })
-                .error(function(error) {
-                    console.log("error");
-                });
-
-            */
-            $http({
-                method: "POST",
-                url: "/createcontainer",
-                data: {
-                    "newContainerName": $scope.newContainerName,
-                    "currentUserId": currentUserId,
-                    "currentUserToken": currentUserToken
-                }
-            }).then(function successCallback(response) {
-                console.log("success: " + response);
-                $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
-                $scope.$apply();
-            }, function errorCallback(response) {
-                console.log("error: " + response);
-            });
+        }
+        $scope.changeWaitingStatus = function(waitingStatus) {
+            if (waitingStatus) {
+                $scope.isShowWaitSignal = true;
+                $scope.isDisableCancelButton = true;
+                $scope.isDisableOkButton = true;
+                $scope.isDisabledContainerNameInput = true;
+            } else {
+                $scope.isShowWaitSignal = false;
+                $scope.isDisableCancelButton = false;
+                $scope.isDisabledContainerNameInput = false;
+            }
         };
+        $scope.changeWaitingStatus(false);
 
         //dialog 닫기.
         $scope.hide = function() {
@@ -407,6 +385,30 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.cancel = function() {
             $mdDialog.cancel();
         };
+
+        //만들고자 하는 컨테이너의 이름을 입력하고 "확인" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
+        $scope.createNewContainer = function() {
+            $scope.changeWaitingStatus(true);
+            $http({
+                method: "POST",
+                url: "/createcontainer",
+                data: {
+                    "newContainerName": $scope.newContainerName,
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken
+                }
+            }).then(function successCallback(response) {
+                console.log("success: " + response);
+                //추가는 되는데 콘솔에서 약간의 오류 발생.
+                $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+                containerList.push($scope.newContainerName);
+                $scope.hide();
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+        };
+
+
     };
 
     //폴더 목록에서 특정 폴더를 선택하여 저장된 파일의 내용을 보여주는 다이얼로그를 출력하기 위한 함수.
@@ -428,12 +430,14 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.folderName = selectedFolderName;
         var existFiles = [];
         $scope.selectedExistFile = [];
+        /*
         httpRequest = getXMLHttpRequest(); //오픈스택 서버에서 폴더명을 가져오기 위한 객체  
         httpRequest.onreadystatechange = viewMessage;
         httpRequest.open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName), true);
         httpRequest.setRequestHeader("x-auth-token", getTokenFromSession());
         httpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
         httpRequest.send(null);
+        */
         $scope.existFilesGridData = {
             //마우스로 grid에 보이는 데이터 선택 가능.
             enableRowSelection: true,
@@ -477,6 +481,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 $scope.selectedExistFile = gridApi.selection.getSelectedRows();
             });
         };
+        /*
         //오픈스택 서버에서 폴더명을 가져오기 위한 함수
         function viewMessage() {
             if (httpRequest.readyState == 4) {
@@ -492,6 +497,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 }
             }
         };
+        */
+        /*
         //오픈스택 서버에서 폴더 내 파일들의 메타데이터를 가져오는 함수   
         function objMetaData() {
             var UsedByte = new Array();
@@ -530,6 +537,27 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 })(p);
             }
         };
+        */
+        console.log("파일 목록 요청 시작");
+        $http({
+            method: "POST",
+            url: "/requestfilelist",
+            data: {
+                "currentUserId": currentUserId,
+                "currentUserToken": currentUserToken,
+                "currentFolderPath": $scope.folderName
+            }
+        }).then(function successCallback(response) {
+            console.log("success: " + response);
+            //TODO. 진행 중.
+            /*
+            $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+            $scope.$apply();
+            */
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
+        console.log("파일 목록 요청 끝");
 
         //파일 grid에 대해 선택된 열이 없는지를 판단.        
         $scope.isNotSelectedExistFiles = function() {

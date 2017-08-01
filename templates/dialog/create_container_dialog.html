@@ -1,4 +1,5 @@
 <md-dialog aria-label="createContainerDialogContent" class="create-container-content-container">
+    <!--
     <div class="md-toolbar-tools">
         <h2></h2>
         <span flex></span>
@@ -6,19 +7,26 @@
             X
         </md-button>
     </div>
+    -->
     <md-dialog-content>
         <div class="md-dialog-content">
             <div class="create_container_dialog-header">
             </div>
             <div class="create_container_dialog-container" layout-gt-xs="row">
-                <md-input-container class="md-block" flax-gt-xs>
-                    <label>컨테이너 이름</label>
-                    <input type="text" ng-model="newContainerName" name="newContainerName">
-                </md-input-container>
+                <form name="create_container_form">
+                    <md-input-container class="md-block" flax-gt-xs>
+                        <label>컨테이너 이름</label>
+                        <input type="text" ng-model="newContainerName" name="newContainerName" ng-change="onChangedContainerNameInput()" ng-disabled="isDisabledContainerNameInput" required md-no-asterisk>
+                    </md-input-container>
+                </form>
             </div>
             <div class="create_container_dialog-button">
-                <md-button ng-click="cancel()">취소</md-button>
-                <md-button ng-click="createNewContainer()">확인</md-button>
+                <md-button ng-click="cancel()" ng-disabled="isDisableCancelButton">취소</md-button>
+                <md-button ng-click="createNewContainer()" ng-disabled="isDisableOkButton">[[okButtonString]]</md-button>
+            </div>
+            <div class="create_container-waiting-signal" layout="row" ng-hide="!isShowWaitSignal">
+                <md-progress-circular md-mode="indeterminate" md-diameter="20px"></md-progress-circular>
+                <p>잠시만 기다려 주세요...</p>
             </div>
         </div>
     </md-dialog-content>

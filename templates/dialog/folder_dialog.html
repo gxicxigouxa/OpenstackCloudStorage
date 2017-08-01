@@ -21,6 +21,10 @@
                     <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
                 </form>
             </div>
+            <div class="folder_dialog-waiting-signal" layout="row" ng-hide="!isWaitingStatus">
+                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                <p>잠시만 기다려 주세요...</p>
+            </div>
         </div>
     </md-dialog-content>
     <md-dialog-actions layout="row">

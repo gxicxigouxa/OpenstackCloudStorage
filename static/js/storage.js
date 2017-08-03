@@ -489,7 +489,17 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         };
 
         $scope.changeFolder = function() {
-            $scope.currentPath += ("/" + $scope.selectedFolder.name);
+            console.log($scope.selectedFolder);
+            console.log($scope.selectedFolder.name);
+            console.log($scope.selectedFolder.lastUpdate);
+            console.log($scope.selectedFolder.size);
+            if ($scope.selectedFolder.name == ("(이전 폴더)") && $scope.selectedFolder.lastUpdate == ".." && $scope.selectedFolder.size == "..") {
+                console.log("이전 폴더로 이동");
+                $scope.currentPath = $scope.currentPath.substring(0, $scope.currentPath.lastIndexOf("/"));
+            } else {
+                console.log("그냥 폴더로 이동")
+                $scope.currentPath += ("/" + $scope.selectedFolder.name);
+            }
             console.log("다음 요청할 폴더 경로: " + $scope.currentPath);
             $scope.existFilesGridData.data = [];
             console.log("파일 목록 요청 시작");
@@ -505,13 +515,21 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("success: ");
                 console.log("받은 데이터:");
                 console.log(response);
+                if ($scope.currentPath != $scope.containerName) {
+                    $scope.existFilesGridData.data.push({
+                        "name": "(이전 폴더)",
+                        "lastUpdate": "..",
+                        "size": "..",
+                        "format": "폴더"
+                    });
+                }
                 for (var i = 0; i < response.data.folders.length; ++i) {
                     $scope.existFilesGridData.data.push(response.data.folders[i]);
                 }
                 for (var i = 0; i < response.data.files.length; ++i) {
                     $scope.existFilesGridData.data.push(response.data.files[i]);
                 }
-                console.log("현재 경로: " + selectedFolderName);
+                console.log("현재 경로: " + $scope.currentPath);
             }, function errorCallback(response) {
                 console.log("error: " + response);
             });

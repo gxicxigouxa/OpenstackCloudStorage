@@ -505,12 +505,11 @@ def requestFileList(userId, userToken, folderPath):
 	print("rawPathList: ")
 	print (rawPathList)
 	#더미 리스트.
-	#rawPathList = ["VXC/", "VXC/aaa/", "VXC/putty.exe"]
 	#결과값은 마치 해당 위치에서의 윈도우의 tree 명령어와 유사한 결과를 출력한다.
 	#이를 /로 파싱하여 폴더로 구분할 수 있도록 하자.
 	
 	for currentPath in rawPathList:
-		if currentPath.find('/'):
+		if currentPath.find('/') is not -1:
 			parsedFolderSet.add(currentPath[:currentPath.find('/')])
 		else:
 			parsedFileSet.add(currentPath)

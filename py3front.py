@@ -50,6 +50,7 @@ import nltk.stem
 import docx2txt
 from pptx import Presentation
 import requests
+from time import sleep
 #-*- coding: utf-8 -*-
 
 mystopword = frozenset([
@@ -157,12 +158,16 @@ def chklogin():
 			if(result[0]["pwd"]==userPwd):#pwd is correct
 				
 				#토큰 가져오기
-				
-				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
-				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
-				headers = {'content-type':'application/json'}
-				response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
-				json_data = json.loads(response.text)
+				try:
+					token_url = 'http://125.132.100.206:5000/v2.0/tokens'
+					data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
+					headers = {'content-type':'application/json'}
+					response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
+					json_data = json.loads(response.text)
+				except requests.exceptions.ConnectionError:
+					print("requests.ecveptions.ConnectionError!")
+					print("It must invoke error after 5 sec.")
+					sleep(5)
 
 				token=json_data["access"]["token"]["id"]
 				print("token: " + token)
@@ -171,7 +176,7 @@ def chklogin():
 				
 				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
 				'''
-				session["token"] = "0123123myuserrandomtoken3213210"
+				session["token"] = "dc206eb78a4f46bb83a227fe61317df8"
 				session["userId"] = userId
 				'''
 				return redirect("/storage")
@@ -437,7 +442,7 @@ def storagepage():
 	print(admin_token_response)
 	json_dict= json.loads(admin_token_response.text)
 	admin_token=json_dict['access']['token']['id']
-	print(admin_token)
+	print("session adminToken: " + admin_token)
 	#토큰에 대한 컨테이너 목록 요청
 	container_url ='http://125.132.100.206:8080/v1/AUTH_'+ session["userId"]
 	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
@@ -449,15 +454,14 @@ def storagepage():
 	print(containerList)
 	#session["storageListString"] = storageListString
 	print("session token: " + session["token"])
-	print("session adminToken: " + admin_token)
 	print("session containerList: ")
 	print(containerList)
 	
 	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
-	
+	'''
 	admin_token = "789789789thisistempadmintoken55555"
 	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
-	
+	'''
 	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
 
 @app.route('/dialog/<path:path>')
@@ -473,7 +477,7 @@ def createcontainer():
 	currentUserToken = data["currentUserToken"]
 	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)
 	#요청했다고 치고 테스트해보자.
-	'''
+	
 	url ='http://125.132.100.206:8080/v1/AUTH_'+ currentUserId
 	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
 
@@ -481,19 +485,45 @@ def createcontainer():
 	print(url+'/'+ newContainerName)
 	print(response)
 	print("newContainerName : " + newContainerName)
-	'''
+	
 	return newContainerName + " create success"
 
 #폴더 내 파일 리스트 요청.
 def requestFileList(userId, userToken, folderPath):
 	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
+	
 	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url+'/'+ folderPath,headers=headers)
 	print(url + '/' + folderPath)
 	print(response.text)
 	print(response.text.split("\n")[:-1])
-	return response.text.split("\n")[:-1]
+	rawPathList = []
+	rawPathList.extend(response.text.split("\n")[:-1])
+	parsedFolderSet = set()
+	parsedFileSet = set()
+	print("rawPathList: ")
+	print (rawPathList)
+	#더미 리스트.
+	#rawPathList = ["VXC/", "VXC/aaa/", "VXC/putty.exe"]
+	#결과값은 마치 해당 위치에서의 윈도우의 tree 명령어와 유사한 결과를 출력한다.
+	#이를 /로 파싱하여 폴더로 구분할 수 있도록 하자.
+	
+	for currentPath in rawPathList:
+		if currentPath.find('/'):
+			parsedFolderSet.add(currentPath[:currentPath.find('/')])
+		else:
+			parsedFileSet.add(currentPath)
+	print(list(parsedFolderSet))
+	print(list(parsedFileSet))
+	folderData = []
+	fileData = []
+	for currentFolder in parsedFolderSet:
+		folderData.append({"name":currentFolder, "lastUpdate":"만든 날짜(폴더)", "size":"폴더의 크기", "format":"폴더"})
+	for currentFile in parsedFileSet:
+		fileData.append({"name":currentFile, "lastUpdate":"만든 날짜(파일)", "size":"파일의 크기", "format":"파일"})
+	forSendData = {"folders":folderData, "files":fileData}
+	return forSendData
 @app.route('/requestfilelist', methods = ['POST'])
 def requestfilelist():
 	if request.method == 'POST':
@@ -501,6 +531,10 @@ def requestfilelist():
 		currentUserId = data["currentUserId"]
 		currentUserToken = data["currentUserToken"]
 		currentFolderPath = data["currentFolderPath"]
+		print("파일 리스트 요청.")
+		print("currentUserId: " + currentUserId)
+		print("currentUserToken: " + currentUserToken)
+		print("currentFolderPath: " + currentFolderPath)
 		return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
 
 if __name__ =='__main__':

@@ -399,7 +399,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 }
             }).then(function successCallback(response) {
                 console.log("success: " + response);
-                //추가는 되는데 콘솔에서 약간의 오류 발생.
                 $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
                 containerList.push($scope.newContainerName);
                 $scope.hide();
@@ -427,17 +426,12 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     //매개 변수로 AngularJS에 대한 전역 변수, 다이얼로그 변수, Toast 메시지를 출력하기 위한 변수를 전달해
     //폴더 다이얼로그의 컨트롤러를 구성하기 위한 함수.
     function folderDialogController($scope, $mdDialog, $mdToast) {
-        $scope.folderName = selectedFolderName;
+        $scope.containerName = selectedFolderName;
+        $scope.currentPath = $scope.containerName;
+        $scope.selectedFolder;
+        $scope.lastSelectedItem;
         var existFiles = [];
         $scope.selectedExistFile = [];
-        /*
-        httpRequest = getXMLHttpRequest(); //오픈스택 서버에서 폴더명을 가져오기 위한 객체  
-        httpRequest.onreadystatechange = viewMessage;
-        httpRequest.open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName), true);
-        httpRequest.setRequestHeader("x-auth-token", getTokenFromSession());
-        httpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-        httpRequest.send(null);
-        */
         $scope.existFilesGridData = {
             //마우스로 grid에 보이는 데이터 선택 가능.
             enableRowSelection: true,
@@ -471,73 +465,70 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         //grid에 대한 데이터 초기화.
         $scope.existFilesGridData.data = [];
         //grid에 대한 callback 함수를 정의.
-        //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 회원 구분 가능.
+        //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 파일 또는 폴더 구분 가능.
         $scope.existFilesGridData.onRegisterApi = function(gridApi) {
             $scope.gridApi2 = gridApi;
             gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
                 $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+                if ($scope.selectedExistFile.length != 0) {
+                    $scope.lastSelectedItem = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "파일") {
+                        console.log("선택된 파일의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                    } else if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "폴더") {
+                        console.log("선택된 폴더의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                        $scope.selectedFolder = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    } else {
+                        console.log("선택된 것: ");
+                        console.log($scope.selectedExistFile);
+                    }
+                }
             });
             gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
                 $scope.selectedExistFile = gridApi.selection.getSelectedRows();
             });
         };
-        /*
-        //오픈스택 서버에서 폴더명을 가져오기 위한 함수
-        function viewMessage() {
-            if (httpRequest.readyState == 4) {
-                if (httpRequest.status == 200) {
-                    var i;
-                    var temp = this.response;
-                    strarray = temp.split('\n');
-                    strarray = strarray.slice(0, strarray.length - 1);
-                    objMetaData();
-                } else {
 
-                    alert("error: " + httpRequest.status);
+        $scope.changeFolder = function() {
+            $scope.currentPath += ("/" + $scope.selectedFolder.name);
+            console.log("다음 요청할 폴더 경로: " + $scope.currentPath);
+            $scope.existFilesGridData.data = [];
+            console.log("파일 목록 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfilelist",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath
                 }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+                for (var i = 0; i < response.data.folders.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.folders[i]);
+                }
+                for (var i = 0; i < response.data.files.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.files[i]);
+                }
+                console.log("현재 경로: " + selectedFolderName);
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("파일 목록 요청 끝");
+        };
+
+        //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.
+        //해당 폴더에 대한 다이얼로그가 나타나도록 구성.
+        $scope.onDblClickRow = function(row) {
+            console.log("무언가 더블클릭됨");
+            console.log($scope.lastSelectedItem);
+            console.log($scope.selectedFolder);
+            if ($scope.lastSelectedItem == $scope.selectedFolder) {
+                console.log("폴더 " + $scope.selectedFolder.name + "이(가) 더블클릭됨.");
+                $scope.changeFolder();
             }
         };
-        */
-        /*
-        //오픈스택 서버에서 폴더 내 파일들의 메타데이터를 가져오는 함수   
-        function objMetaData() {
-            var UsedByte = new Array();
-            var LastModifiedDate = new Array();
-            var xhr = new Array();
-            var FileName = new Array();
-            var p;
-            for (p = 0; p < strarray.length; p++) {
-                (function(p) {
-                    if (p < strarray.length) {
-                        xhr[p] = getXMLHttpRequest();
-                        xhr[p].open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName + "/" + strarray[p]), true);
-                        xhr[p].setRequestHeader("x-auth-token", getTokenFromSession());
-                        xhr[p].setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-                        xhr[p].onreadystatechange = function(e) {
-                            if (xhr[p].readyState == 4) {
-                                if (xhr[p].status == 200) {
-                                    var temp = this.response;
-                                    LastModifiedDate[p] = xhr[p].getResponseHeader("Last-Modified")
-                                    UsedByte[p] = xhr[p].getResponseHeader("Content-Length");
-                                    var currentData = {
-                                        name: strarray[p],
-                                        lastUpdate: LastModifiedDate[p],
-                                        size: formatByte(UsedByte[p]),
-                                        format: getFileType(strarray[p])
-                                    };
-                                    $scope.existFilesGridData.data.push(currentData);
-                                    $scope.$apply();
-                                } else {
-                                    alert("error: " + xhr[p].status);
-                                }
-                            }
-                        };
-                        xhr[p].send(null);
-                    }
-                })(p);
-            }
-        };
-        */
         console.log("파일 목록 요청 시작");
         $http({
             method: "POST",
@@ -545,15 +536,20 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             data: {
                 "currentUserId": currentUserId,
                 "currentUserToken": currentUserToken,
-                "currentFolderPath": $scope.folderName
+                "currentFolderPath": $scope.currentPath
             }
         }).then(function successCallback(response) {
-            console.log("success: " + response);
-            //TODO. 진행 중.
-            /*
-            $scope.gridOptions.data.push({ name: $scope.newContainerName, makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
-            $scope.$apply();
-            */
+            console.log("success: ");
+            console.log("받은 데이터:");
+            console.log(response);
+
+            for (var i = 0; i < response.data.folders.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.folders[i]);
+            }
+            for (var i = 0; i < response.data.files.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.files[i]);
+            }
+            console.log("현재 경로: " + selectedFolderName);
         }, function errorCallback(response) {
             console.log("error: " + response);
         });
@@ -745,6 +741,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             $scope.selectedFolder = gridApi.selection.getSelectedRows();
             selectedFolder = $scope.selectedFolder;
             selectedFolderName = selectedFolder[0].name;
+            console.log("현재 선택된 컨테이너: " + selectedFolderName);
         });
         gridApi.selection.on.rowSelectionChangedBatch($scope, function(row) {
             $scope.selectedFolder = gridApi.selection.getSelectedRows();

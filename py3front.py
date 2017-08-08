@@ -158,16 +158,11 @@ def chklogin():
 			if(result[0]["pwd"]==userPwd):#pwd is correct
 				
 				#토큰 가져오기
-				try:
-					token_url = 'http://125.132.100.206:5000/v2.0/tokens'
-					data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
-					headers = {'content-type':'application/json'}
-					response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
-					json_data = json.loads(response.text)
-				except requests.exceptions.ConnectionError:
-					print("requests.ecveptions.ConnectionError!")
-					print("It must invoke error after 5 sec.")
-					sleep(5)
+				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
+				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
+				headers = {'content-type':'application/json'}
+				response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
+				json_data = json.loads(response.text)
 
 				token=json_data["access"]["token"]["id"]
 				print("token: " + token)
@@ -176,7 +171,7 @@ def chklogin():
 				
 				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
 				'''
-				session["token"] = "dc206eb78a4f46bb83a227fe61317df8"
+				session["token"] = "0123123myuserrandomtoken3213210"
 				session["userId"] = userId
 				'''
 				return redirect("/storage")
@@ -475,12 +470,9 @@ def createcontainer():
 	newContainerName = data["newContainerName"]
 	currentUserId = data["currentUserId"]
 	currentUserToken = data["currentUserToken"]
-	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)
-	#요청했다고 치고 테스트해보자.
-	
+	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)	
 	url ='http://125.132.100.206:8080/v1/AUTH_'+ currentUserId
 	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
-
 	response = requests.put(url+ '/' +newContainerName, headers=headers)
 	print(url+'/'+ newContainerName)
 	print(response)
@@ -491,7 +483,7 @@ def createcontainer():
 #폴더 내 파일 리스트 요청.
 def requestFileList(userId, userToken, folderPath):
 	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
-	
+	#지금 메인에서 보이는 컨테이너의 내용은 잘 보이는데 컨테이너의 폴더에 들어가면 잘 안된다.
 	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url+'/'+ folderPath,headers=headers)
@@ -504,10 +496,6 @@ def requestFileList(userId, userToken, folderPath):
 	parsedFileSet = set()
 	print("rawPathList: ")
 	print (rawPathList)
-	#더미 리스트.
-	#결과값은 마치 해당 위치에서의 윈도우의 tree 명령어와 유사한 결과를 출력한다.
-	#이를 /로 파싱하여 폴더로 구분할 수 있도록 하자.
-	
 	for currentPath in rawPathList:
 		if currentPath.find('/') is not -1:
 			parsedFolderSet.add(currentPath[:currentPath.find('/')])
@@ -534,7 +522,78 @@ def requestfilelist():
 		print("currentUserId: " + currentUserId)
 		print("currentUserToken: " + currentUserToken)
 		print("currentFolderPath: " + currentFolderPath)
-		return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
+		#return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
+		return "업로드 테스트중. 우선 파일 목록 요청은 보류 중."
+
+#TODO. 파일 업로드 요청.
+def requestFileUpload(userId, userToken, folderPath, toUploadFile):
+	'''
+	var obj;
+	var fileName;
+	var extName;
+	// 파일을 업로드 한다.
+	var uploadFile = document.getElementById("fileInputButton")
+	obj = document.actFrm.upFile;
+	if (obj.value != "") {
+		var pathHeader = obj.value.lastIndexOf("\\");
+		var pathMiddle = obj.value.lastIndexOf(".");
+		var pathEnd = obj.value.length;
+		fileName = obj.value.substring(pathHeader + 1, pathMiddle);
+		extName = obj.value.substring(pathMiddle + 1, pathEnd);
+	}
+	var xhr = new XMLHttpRequest(); //파일을 업로드 하기 위한 객체
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) { //4:complete state 200 : 이상없음
+		}
+	};
+
+	//맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
+	xhr.open("PUT", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + fileName + "." + extName), true);
+	xhr.setRequestHeader("X-File-Name", encodeURIComponent(uploadFile.files[0].name));
+	//토큰 갱신될때마다 계속 바꿔주기 
+	xhr.setRequestHeader("x-auth-token", getTokenFromSession());
+	xhr.setRequestHeader("content-type", "text/html");
+	xhr.setRequestHeader("cache-control", "no-cache");
+	xhr.send(uploadFile.files[0]);
+	$scope.$apply();
+	$scope.showUploadCompletedToast();
+	'''
+	#테스트 필요.
+	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	#fileName에 encodeURIComponent를 걸어야 하나?...
+	fileName = toUploadFile.filename
+	print("file name: " + fileName)
+	headers  ={'X-File-Name':fileName, 'x-auth-token':userToken,'content-type':'text/html', 'cache-control':'no-cache'}
+	response = requests.put(url + '/' + fileName, toUploadFile, headers=headers)
+	print(url + '/' + fileName)
+	print(response.text)
+	return response.text
+@app.route('/requestfileupload', methods = ['POST'])
+def requestfileupload():
+	if request.method == 'POST':
+		fileData = request.files
+		data = request.form
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentToUploadFile = fileData["file"]
+		#잘못된 동작을 수행하면 바로 코드 400을 던져버린다...
+		#정확히는 MultiDict 형에서 KeyError가 발생하면 400 BAD REQUEST를 던진다.
+		print("파일 업로드 요청.")
+		print("currentUserId: " + currentUserId)
+		print("currentUserToken: " + currentUserToken)
+		print("currentFolderPath: " + currentFolderPath)
+		print("currentToUploadFile: ")
+		print(currentToUploadFile)
+		return jsonify(requestFileUpload(currentUserId, currentUserToken, currentFolderPath, currentToUploadFile))
+
+#TODO. 파일 다운로드 요청.
+def requestFileDownload():
+	return
+@app.route('/requestfiledownload', methods = ['POST'])
+def requestfiledownload():
+	if request.method == 'POST':
+		return
 
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

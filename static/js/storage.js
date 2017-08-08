@@ -5,7 +5,7 @@
 //ui.grid.selection: ui.grid의 추가 모듈. grid의 특정 열을 선택 가능.
 //ui.grid.moveColumns: ui.grid의 추가 모듈. grid의 열 순서를 변경 가능.
 //ui.grid.resizeColumns: ui.grid의 추가 모듈. grid의 열 폭을 변경 가능.
-var app = angular.module('storageApp', ['ngMaterial', 'ui.grid', 'ui.grid.selection', 'ui.grid.moveColumns', 'ui.grid.resizeColumns']);
+var app = angular.module('storageApp', ['ngMaterial', 'ngFileUpload', 'ui.grid', 'ui.grid.selection', 'ui.grid.moveColumns', 'ui.grid.resizeColumns']);
 var selectedRow_before = null;
 var selected_length = 0;
 var new_folder_name = '';
@@ -135,7 +135,7 @@ var currentUserToken;
 //$mdDialog: AngularJS에 대한 Native Material 디자인이 적용된 다이얼로그를 이용하기 위한 변수.
 //$filter: grid에서 찾기 기능을 이용하기 위한 변수.
 //$window: 창 전환에 관한 기능을 이용하기 위한 변수.
-app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window', '$http', function($scope, $mdDialog, $filter, $window, $http) {
+app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window', '$http', 'Upload', function($scope, $mdDialog, $filter, $window, $http, Upload) {
     console.log("token: " + token);
     //console.log("storageListString: " + storageListString);
     console.log("adminToken: " + adminToken);
@@ -430,6 +430,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.currentPath = $scope.containerName;
         $scope.selectedFolder;
         $scope.lastSelectedItem;
+        $scope.isAutoClassification = false;
         var existFiles = [];
         $scope.selectedExistFile = [];
         $scope.existFilesGridData = {
@@ -616,6 +617,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         //업로드하고자 하는 파일을 실제로 서버에 저장하기 위한 함수.
         //$scope.fileChanged(element) 내에서 호출.
         $scope.uploadSelectedFiles = function() {
+            /*
             var obj;
             var fileName;
             var extName;
@@ -645,6 +647,61 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             xhr.send(uploadFile.files[0]);
             $scope.$apply();
             $scope.showUploadCompletedToast();
+            */
+            //TODO.
+            var obj;
+            var fileName;
+            var extName;
+            // 파일을 업로드 한다.
+            var uploadFile = document.getElementById("fileInputButton")
+            obj = document.actFrm.upFile;
+            if (obj.value != "") {
+                var pathHeader = obj.value.lastIndexOf("\\");
+                var pathMiddle = obj.value.lastIndexOf(".");
+                var pathEnd = obj.value.length;
+                fileName = obj.value.substring(pathHeader + 1, pathMiddle);
+                extName = obj.value.substring(pathMiddle + 1, pathEnd);
+            }
+            console.log("uploadFile.files:");
+            console.log(uploadFile.files);
+            console.log("파일 업로드 요청 시작");
+            /*
+            $http({
+                method: "POST",
+                url: "/requestfileupload",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath,
+                    "currentToUploadFile": uploadFile.files[0]
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            */
+
+            Upload.upload({
+                url: "/requestfileupload",
+                file: uploadFile.files[0],
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+            }, function errorCallback(response) {
+                console.log("error: ");
+                console.log(response);
+            });
+
+            console.log("파일 업로드 요청 끝");
         };
 
         //파일 grid에서 다운로드하고자 하는 파일을 실제로 로컬 드라이브에 저장하기 위한 함수.

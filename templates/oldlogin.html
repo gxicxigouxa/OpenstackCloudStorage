@@ -90,10 +90,13 @@
                     <br>
                     <div class="mdl-card__supporting-text">
                         <form action="/signupchk" method="POST" id="sign-up-form" name="sign-up-form">
-                            <i class="material-icons mdl-list__item-icon">person</i>
-                            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width:63%; left:15px; ">
-                                <input class="mdl-textfield__input" type="text" id="user-id" name="user-id" ng-model="userId">
-                                <label class="mdl-textfield__label" for="sample3">ID</label>
+                            <div style="display: inline;">
+                                <i class="material-icons mdl-list__item-icon">person</i>
+                                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width:55%; left:15px;">
+                                    <input class="mdl-textfield__input" type="text" id="user-id" name="user-id" ng-model="userId" ng-change="idDuplicationTest()">
+                                    <label class="mdl-textfield__label" for="sample3">ID</label>
+                                </div>
+                                <span style="padding-left: 15px;" ng-bind="duplicationStatusMessage"></span>
                             </div>
                             <br>
                             <i class="material-icons mdl-list__item-icon">lock</i>

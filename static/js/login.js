@@ -18,10 +18,9 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
     //$scope: 컨트롤러 내에서 AngularJS에 의해 binding될 변수 및 함수들을 저장.
     //$window: 창 전환에 관한 기능을 이용하기 위한 변수.
     //$mdDialog: AngularJS에 대한 Native Material 디자인이 적용된 다이얼로그를 이용하기 위한 변수.
-    .controller('oldLoginController', ['$scope', '$window', '$mdDialog', function($scope, $window, $mdDialog) {
+    .controller('oldLoginController', ['$scope', '$window', '$mdDialog', '$http', function($scope, $window, $mdDialog, $http) {
         $scope.loginErrorCode = login_err_code;
         $scope.signUpErrorCode = sign_up_err_code;
-
         $scope.loginId = "";
         $scope.loginPassword = "";
         $scope.loginIdCode = "";
@@ -31,6 +30,8 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         $scope.userPasswordCheck = "";
         $scope.userBirthday = "";
         $scope.userEmail = "";
+
+        $scope.duplicationStatusMessage = "";
 
         //크로스 도메인을 위한 함수
         function convertToCorsUrl(url) {
@@ -111,7 +112,34 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
             } else {
                 document.forms['sign-up-form'].submit();
             }
-        }
+        };
+        //TODO.
+        $scope.idDuplicationTest = function() {
+            $http({
+                method: "POST",
+                url: "/idduplicationtest",
+                data: {
+                    "signUpId": $scope.userId,
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log(response);
+                if (response.data == "success") {
+                    console.log("존재하지 않은 ID")
+                    if ($scope.userId == "" || $scope.userId.indexOf(" ") != -1) {
+                        $scope.duplicationStatusMessage = "사용 불가능한 ID";
+                    } else {
+                        $scope.duplicationStatusMessage = "사용 가능한 ID";
+                    }
+                } else if (response.data == "existed id") {
+                    console.log("사용 불가.")
+                    $scope.duplicationStatusMessage = "이미 존재하는 ID";
+                }
+            }, function errorCallback(response) {
+                console.log("error: ");
+                console.log(response);
+            });
+        };
 
         $scope.hideLoginWindowFlag = false;
         $scope.hidePolicyWindowFlag = true;

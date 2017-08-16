@@ -254,6 +254,26 @@ def chksignup():
 		else:
 			return render_template('oldlogin.html', login_err_code = "none", sign_up_err_code = "existed id")
 
+@app.route('/idduplicationtest', methods=['POST'])
+def idduplicationtest():
+	if request.method == "POST":
+		data = request.get_json()
+		signUpId = data["signUpId"]
+		print (signUpId)
+		conn =mysql.connect()
+		cursor =conn.cursor()
+		query = "select * from userinfotable where id ='"+signUpId +"';"
+		cursor.execute(query)
+		conn.commit()		   
+		result =[]
+		columns= tuple( [d[0] for d in cursor.description] )		   
+		for row in cursor:
+		   result.append(dict(zip(columns, row)))
+		print (str(result))
+		if (str(result)=='[]'):
+			return "success"
+		else:
+			return "existed id"
 
 @app.route('/basicpage')
 def showbasicpage():
@@ -589,11 +609,48 @@ def requestfileupload():
 
 #TODO. 파일 다운로드 요청.
 def requestFileDownload():
-	return
+	'''
+	var xhr = getXMLHttpRequest(); //오픈스택 서버에서 로컬 드라이브로 파일을 저장하기 위한 객체
+	$scope.gridApi2.selection.getSelectedRows();
+	xhr.open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + $scope.selectedExistFile[0].name), true);
+	xhr.setRequestHeader("x-auth-token", getTokenFromSession());
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+	xhr.responseType = "arraybuffer";
+	xhr.onload = function(e) {
+		var arrayBufferView = new Uint8Array(this.response);
+		var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+		var urlCreator = window.URL || window.webkitURL;
+
+		if (window.navigator.msSaveOrOpenBlob)
+			window.navigator.msSaveOrOpenBlob(blob, $scope.selectedExistFile[0].name);
+		else {
+			var a = window.document.createElement("a");
+			a.href = window.URL.createObjectURL(blob, { type: "image/jpeg" });
+			a.download = $scope.selectedExistFile[0].name;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+		}
+	};
+	xhr.send();
+	'''
+	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	#fileName에 encodeURIComponent를 걸어야 하나?...
+	print("file name: " + fileName)
+	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
+	response = requests.get(url + '/' + fileName, headers=headers)
+	print(url + '/' + fileName)
+	print(response.text)
+	return response
 @app.route('/requestfiledownload', methods = ['POST'])
 def requestfiledownload():
 	if request.method == 'POST':
-		return
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentFileName = data["currentFileName"]
+		return jsonify(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

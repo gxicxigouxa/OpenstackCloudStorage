@@ -665,24 +665,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             console.log("uploadFile.files:");
             console.log(uploadFile.files);
             console.log("파일 업로드 요청 시작");
-            /*
-            $http({
-                method: "POST",
-                url: "/requestfileupload",
-                data: {
-                    "currentUserId": currentUserId,
-                    "currentUserToken": currentUserToken,
-                    "currentFolderPath": $scope.currentPath,
-                    "currentToUploadFile": uploadFile.files[0]
-                }
-            }).then(function successCallback(response) {
-                console.log("success: ");
-                console.log("받은 데이터:");
-                console.log(response);
-            }, function errorCallback(response) {
-                console.log("error: " + response);
-            });
-            */
 
             Upload.upload({
                 url: "/requestfileupload",
@@ -706,6 +688,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
 
         //파일 grid에서 다운로드하고자 하는 파일을 실제로 로컬 드라이브에 저장하기 위한 함수.
         $scope.downloadSelectedFile = function() {
+            /*
             var xhr = getXMLHttpRequest(); //오픈스택 서버에서 로컬 드라이브로 파일을 저장하기 위한 객체
             $scope.gridApi2.selection.getSelectedRows();
             xhr.open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + $scope.selectedExistFile[0].name), true);
@@ -729,6 +712,40 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 }
             };
             xhr.send();
+            */
+            //TODO. 테스트 필요.
+            console.log("파일 다운로드 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfiledownload",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath,
+                    "currentFileName": $scope.selectedExistFile[0].name
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+                var arrayBufferView = new Uint8Array(response);
+                var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                var urlCreator = window.URL || window.webkitURL;
+
+                if (window.navigator.msSaveOrOpenBlob)
+                    window.navigator.msSaveOrOpenBlob(blob, $scope.selectedExistFile[0].name);
+                else {
+                    var a = window.document.createElement("a");
+                    a.href = window.URL.createObjectURL(blob, { type: "image/jpeg" });
+                    a.download = $scope.selectedExistFile[0].name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("파일 다운로드 요청 끝");
         };
 
         //파일 grid에서 삭제하고자 하는 파일을 실제 서버에서 제거하기 위한 함수.

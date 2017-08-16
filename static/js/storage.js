@@ -750,6 +750,28 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
 
         //파일 grid에서 삭제하고자 하는 파일을 실제 서버에서 제거하기 위한 함수.
         $scope.deleteFile = function() {
+            console.log("파일 삭제 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfiledelete",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath,
+                    "currentFileName": $scope.selectedExistFile[0].name
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
+                    $scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
+                });
+                $scope.gridApi2.selection.clearSelectedRows();
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("삭제 요청 끝");
+            /*
             var xhr = new XMLHttpRequest(); //파일을 삭제하기 위한 객체
             //맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
             xhr.open("DELETE", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName + "/" + $scope.selectedExistFile[0].name), true);
@@ -757,6 +779,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             xhr.setRequestHeader("content-type", "text/html");
             xhr.setRequestHeader("cache-control", "no-cache");
             xhr.send();
+            */
             angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
                 $scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
             });

@@ -608,7 +608,7 @@ def requestfileupload():
 		return jsonify(requestFileUpload(currentUserId, currentUserToken, currentFolderPath, currentToUploadFile))
 
 #TODO. 파일 다운로드 요청.
-def requestFileDownload():
+def requestFileDownload(userId, userToken, folderPath, fileName):
 	'''
 	var xhr = getXMLHttpRequest(); //오픈스택 서버에서 로컬 드라이브로 파일을 저장하기 위한 객체
 	$scope.gridApi2.selection.getSelectedRows();
@@ -652,5 +652,37 @@ def requestfiledownload():
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
+#TODO. 파일 삭제 요청.
+def requestFileDelete(userId, userToken, folderPath, fileName):
+	'''
+	var xhr = new XMLHttpRequest(); //파일을 삭제하기 위한 객체
+	//맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
+	xhr.open("DELETE", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName + "/" + $scope.selectedExistFile[0].name), true);
+	xhr.setRequestHeader("x-auth-token", getTokenFromSession()); //토큰 갱신될때마다 계속 바꿔주기 
+	xhr.setRequestHeader("content-type", "text/html");
+	xhr.setRequestHeader("cache-control", "no-cache");
+	xhr.send();
+	angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
+		$scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
+	});
+	$scope.gridApi2.selection.clearSelectedRows();
+	'''
+	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	#fileName에 encodeURIComponent를 걸어야 하나?...
+	print("file name: " + fileName)
+	headers  ={'x-auth-token':userToken, 'content-type':'text/html', 'cache-control':'no-cache'}
+	response = requests.delete(url + '/' + fileName, headers=headers)
+	print(url + '/' + fileName)
+	print(response.text)
+	return response
+@app.route('/requestfiledelete', methods = ['POST'])
+def requestfiledelete():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentFileName = data["currentFileName"]
+		return jsonify(requestFileDelete(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

@@ -155,8 +155,10 @@ def chklogin():
 		if (str(result)=='[]'): # When there is no user id in db
 			return render_template('oldlogin.html',login_err_code ="id incorrect", sign_up_err_code = "none")
 		else:
-			if(result[0]["pwd"]==userPwd):#pwd is correct
-				
+			if result[0]["id"] == "admin":
+				print("rendering manager monitoring page...")
+				return redirect("/monitoring")
+			elif(result[0]["pwd"]==userPwd):#pwd is correct
 				#토큰 가져오기
 				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
@@ -478,6 +480,10 @@ def storagepage():
 	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
 	'''
 	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
+
+@app.route('/monitoring')
+def monitoringpage():
+	return render_template('manager_monitoring.html')
 
 @app.route('/dialog/<path:path>')
 def serve_dialog(path):

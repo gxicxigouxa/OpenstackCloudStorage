@@ -125,6 +125,31 @@ app.config['MYSQL_DATABASE_DB']='jhj'
 app.secret_key = "OPENSTACK_SECRET_KEY"
 mysql.init_app(app)
 
+english_stemmer=nltk.stem.SnowballStemmer('english')
+class StemmedCountVectorizer(CountVectorizer):
+   def build_analyzer(self):
+      analyzer = super(StemmedCountVectorizer,self).build_analyzer()
+      return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
+
+def allowed_file(filename):
+   return '.' in filename and \
+      filename.rsplit('.',1)[1] in ALLOWED_EXTENSIONS
+
+def dist_norm(v1,v2):
+   v1_normalized = v1/sp.linalg.norm(v1.toarray())
+   v2_normalized = v2/sp.linalg.norm(v2.toarray())
+   delta = v1_normalized -v2_normalized
+   return sp.linalg.norm(delta.toarray())
+
+def num_only_file(pwd):
+   numOfFile=0
+   filenames = os.listdir(pwd)
+   for filename in filenames:
+      if (os.path.isfile(pwd+'/'+filename)):
+         numOfFile+=1
+         
+   return numOfFile  
+
 @app.route('/login')
 def showloginpage():
 	return render_template('oldlogin.html',err_code ="no error")
@@ -160,6 +185,7 @@ def chklogin():
 				return redirect("/monitoring")
 			elif(result[0]["pwd"]==userPwd):#pwd is correct
 				#토큰 가져오기
+				'''
 				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
 				headers = {'content-type':'application/json'}
@@ -170,12 +196,12 @@ def chklogin():
 				print("token: " + token)
 				session["token"] = token
 				session["userId"] = userId
-				
-				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
 				'''
+				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
+				
 				session["token"] = "0123123myuserrandomtoken3213210"
 				session["userId"] = userId
-				'''
+				
 				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
@@ -343,9 +369,46 @@ API_KEY='bd4e869950aec438845db005416179e0992a76d1692247c5b468b95d356afce8'
 detected_cnt=0
 Total_num=0
 
+@app.route('/malwaretest', methods=['POST'])
+def malwarecheck():
+		#files = request.files['file']
+		files = {'file': (request.files['file'].filename, request.files['file'])}
+		print(files)
+		params = {'apikey': API_KEY}
+		#악성 코드 분석 요청
+		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
+		#분석 요청 결과
+		json_response = response.json()
+		print(json_response)
+		if json_response['response_code'] != 1:
+			return {'result':'Scan request fail'}
+		else:
+			print("Scan request success. Wait for 5 seconds.")
+			time.sleep(5)
+			#분석 결과 요청
+			#이하 아직 테스트하지 못함
+			params = {'apikey': API_KEY, 'resource': json_response['resource']}
+			headers = {
+				"Accept-Encoding": "gzip, deflate",
+				"User-Agent" : "gzip,  My Python requests library example client or username"
+			}
+			response = requests.get('https://www.virustotal.com/vtapi/v2/file/report', params=params, headers=headers)
+			#분석 결과 요청에 대한 결과
+			json_response = response
+			print(json_response)
+			scanResults = list(json_response['scans'].values())
+			print(scanResults)
+			for scanResult in scanResults:
+				if scanResult['detected']:
+					print("Virus detected!")
+					return {'result':'Virus detected'}
+			print("Virus not detected.")
+			return {'result':'Virus not detected'}
+
 def scan_file(APIKEY,FilePath):
 	while(True):
 		params = {'apikey': API_KEY}
+		
 		files = {'file': (FilePath, open(FilePath, 'rb'))}
 		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
 		scan_response = response.json()
@@ -450,7 +513,7 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
-	
+	'''
 	#######get the admin token
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
@@ -473,12 +536,12 @@ def storagepage():
 	print("session token: " + session["token"])
 	print("session containerList: ")
 	print(containerList)
-	
-	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
 	'''
+	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
+	
 	admin_token = "789789789thisistempadmintoken55555"
 	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
-	'''
+	
 	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
 
 @app.route('/monitoring')
@@ -690,5 +753,178 @@ def requestfiledelete():
 		currentFolderPath = data["currentFolderPath"]
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDelete(currentUserId, currentUserToken, currentFolderPath, currentFileName))
+
+@app.route('/textcompare',methods=['POST'])#post with javascript code!!!
+#파일을 받아 각 폴더 내부에 있는 파일의 유사도를 분석하여 해당 파일과 가장 알맞는 폴더를 찾아 이동시킨다.
+#분류 대상은 텍스트(.txt), MS word(.docx), MS powerpoint(.pptx)이며, 이외에는 분류하지 않고 현재 디렉토리에 저장.
+def textcompare():
+   if request.method =='POST':
+      path_dir = TXT_DIRECTORY
+      dir_list=[]
+      filenames= []
+      filename=''
+      upload_contents=''
+      file = request.files['file']
+      if file and allowed_file(file.filename):
+         
+
+         filename = file.filename
+         print("filename: " + filename)
+         filenames.append(filename)
+         file.save(os.path.join(app.config['TXT_DIRECTORY'],filename))
+   
+
+         ext = filename.split('.')
+         #뭔가 divedebyzero error 발생... 그런데 일단은 분류 자체는 잘 되는것 같다.
+         if ext[-1]=='txt':
+            f= open(path_dir+'/'+filename,'r')
+            upload_contents=f.read()
+            f.close()
+         elif ext[-1]=='docx':
+            docx_content = docx2txt.process(path_dir+'/'+filename)
+            upload_contents=docx_content
+         elif ext[-1]=='pptx':
+            prs =Presentation(path_dir+'/'+filename)
+            for slide in prs.slides:
+               for shape in slide.shapes:
+                  if not shape.has_text_frame:
+                     continue
+                  for paragraph in shape.text_frame.paragraphs:
+                     for run in paragraph.runs:
+                        upload_contents+=run.text+ ' '
+         else :
+            return "no available file extension"+ '  '+str(ext[-1])
+
+      else:
+         return "not allowed ext"
+      
+      ###--------------------------parsing only directory (not file)-----------------------------------------
+      for file in os.listdir(path_dir):
+         if os.path.isdir(path_dir+'/'+file):
+            dir_list.append(path_dir+'/'+file)
+
+      dir_list.sort()
+      ###--------------------------parsing only directory (not file)-------------------------------------------
+      
+      
+      total_score=[]
+      total_content=[]
+      #same index with dir_list
+      
+
+
+      #vectorizer = CountVectorizer(min_df=1)
+      vectorizer=StemmedCountVectorizer(min_df=1,max_df=0.9, stop_words='english')
+      #parsing the all content in the test file not in the presentation file  pptxfile is in the another paht (ex > not /test1   /test1/presentation)
+      for i in range(len(dir_list)):
+         for file in os.listdir(dir_list[i]):
+            
+            
+            if os.path.isfile(dir_list[i]+'/'+file):   # if it is file 
+               ext =file.split('.')
+               if ext[1]=='txt':
+                  f= open(dir_list[i]+'/'+file)
+                  total_content.append(f.read())
+               if ext[1]=='docx':
+                  total_content.append(docx2txt.process(dir_list[i]+'/'+file))
+               '''
+               if ext[1]=='pptx':
+                  prs =Presentation(dir_list[i]+'/'+file)
+                  content=''
+                  for slide in prs.slides:
+                     for shape in slide.shapes:
+                        if not shape.has_text_frame:
+                           continue
+                        for paragraph in shape.text_frame.paragraphs:
+                           for run in paragraph.runs:
+                              content+=run.text+ ' '
+
+                  total_content.append(content)         
+               '''
+
+
+            else:# if it is directory
+               continue         
+      #parsing the all content
+
+                                                      
+      for i in range(len(total_content)):
+         X_train=vectorizer.fit_transform(total_content)
+         num_samples,num_features=X_train.shape
+         new_post=upload_contents
+         new_post_vec = vectorizer.transform([new_post])
+
+      best_doc = None
+      best_dist = sys.maxsize
+      best_i=None
+      for i,post in enumerate(total_content):
+         #if post == new_post:
+         #   continue
+
+         post_vec = X_train.getrow(i)
+         d=dist_norm(post_vec,new_post_vec)
+         total_score.append(d)
+         if d<best_dist:
+            best_dist=d
+            best_i=i
+
+      dir_file_num=[]
+      # directory's number of files!
+      '''
+      def num_only_file(pwd):
+      numOfFile=0
+      filenames = os.listdir(pwd)
+      for filename in filenames:
+      if (os.path.isfile(pwd)):
+         numOfFile+=1;
+
+      return numOfFile   
+
+      '''
+      
+      for i in range(len(dir_list)):
+         dir_file_num.append(num_only_file(dir_list[i]))#do not count the  directory , just file count(because of presentation)
+
+
+      sum =0
+      #find the file's closest directory location
+      for i in range(len(dir_file_num)):
+         sum+=dir_file_num[i] 
+         if(sum>=best_i+1):
+            closest_location=i
+            break            
+      
+      '''
+      def find_file_location(sum,dirFileListArr,num_directory,closest_index):
+         for i in range(num_directory):
+            sum+=dirFileListArr[i]
+            if(sum>=closest_index+1):
+               return i
+
+      '''
+      #file_location = find_file_location(sum,dir_file_num,len(dir_file_num),best_i)
+
+      #######################
+
+      most= dir_list[closest_location]
+
+      
+      if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation
+         shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+      else:
+         shutil.move(path_dir+'/'+filename,most+"/"+filename)
+   
+      #return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)      
+
+      
+
+      #after this code ----------------- front section modified code
+   textdir_list=[]
+   textdir_list = os.listdir("/home/gxicxigouxa/myproject/textcompare")
+
+   return render_template('txt.html',textdir_list=textdir_list)
+
+   
+   return("Method is not post")
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

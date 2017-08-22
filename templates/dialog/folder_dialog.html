@@ -23,8 +23,10 @@
                         <md-button class="md-raised" ng-click="downloadSelectedFile()" ng-disabled="isNotSelectedExistFiles()">다운로드</md-button>
                         <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
                     </div>
-                    <div id="auto-classification-switch">
+                    <div layout="row" id="auto-classification-switch">
                         <md-switch ng-model="isAutoClassification" aria-label="auto-classification-switch">자동 분류</md-switch>
+                        <input id="malwareTestButton" type="file" class="ng-hide" onchange="angular.element(this).scope().malwareTest(this)" aria-label="fileInput" name="malwareTestButton"></input>
+                        <label for="malwareTestButton" class="md-button md-primary">악성코드 테스트</label>
                     </div>
                 </form>
             </div>

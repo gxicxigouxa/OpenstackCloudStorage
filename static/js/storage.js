@@ -664,11 +664,58 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             }
             console.log("uploadFile.files:");
             console.log(uploadFile.files);
-            console.log("파일 업로드 요청 시작");
 
+            if (!$scope.isAutoClassification) {
+                console.log("파일 업로드 요청 시작(일반)");
+                Upload.upload({
+                    url: "/requestfileupload",
+                    file: uploadFile.files[0],
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+                console.log("파일 업로드 요청 끝(일반)");
+            } else {
+                console.log("파일 업로드 요청 시작(자동분류)");
+                Upload.upload({
+                    url: "/textcompare",
+                    file: uploadFile.files[0],
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+                console.log("파일 업로드 요청 끝(자동분류)");
+            }
+
+        };
+
+        $scope.malwareTest = function(element) {
+            //선택된 파일들.
+            var selectedFiles = element.files;
+            //선택된 파일의 갯수.
+            var numberOfSelectedFiles = selectedFiles.length;
+            console.log("악성코드 테스트 요청 시작");
             Upload.upload({
-                url: "/requestfileupload",
-                file: uploadFile.files[0],
+                url: "/malwaretest",
+                file: selectedFiles[0],
                 data: {
                     "currentUserId": currentUserId,
                     "currentUserToken": currentUserToken,
@@ -678,13 +725,21 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("success: ");
                 console.log("받은 데이터:");
                 console.log(response);
+                if (response.data.result == "Scan request fail") {
+                    alert("분석 요청 실패");
+                } else if (response.data.result == "Virus detected") {
+                    alert("악성코드 검출됨");
+                } else if (response.data.result == "Virus not detected") {
+                    alert("악성코드 검출되지 않음")
+                } else {
+                    alert("알 수 없는 결과");
+                }
             }, function errorCallback(response) {
                 console.log("error: ");
                 console.log(response);
             });
-
-            console.log("파일 업로드 요청 끝");
-        };
+            console.log("악성코드 테스트 요청 끝");
+        }
 
         //파일 grid에서 다운로드하고자 하는 파일을 실제로 로컬 드라이브에 저장하기 위한 함수.
         $scope.downloadSelectedFile = function() {

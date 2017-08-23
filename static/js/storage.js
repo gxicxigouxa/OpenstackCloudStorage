@@ -431,6 +431,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.selectedFolder;
         $scope.lastSelectedItem;
         $scope.isAutoClassification = false;
+        $scope.isDisableMalwareTestButton = false;
+        $scope.malwareTestButtonMessage = "악성코드 검사";
         var existFiles = [];
         $scope.selectedExistFile = [];
         $scope.existFilesGridData = {
@@ -713,6 +715,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             //선택된 파일의 갯수.
             var numberOfSelectedFiles = selectedFiles.length;
             console.log("악성코드 테스트 요청 시작");
+            $scope.malwareTestButtonMessage = "검사중...";
+            $scope.isDisableMalwareTestButton = true;
             Upload.upload({
                 url: "/malwaretest",
                 file: selectedFiles[0],
@@ -730,13 +734,18 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 } else if (response.data.result == "Virus detected") {
                     alert("악성코드 검출됨");
                 } else if (response.data.result == "Virus not detected") {
-                    alert("악성코드 검출되지 않음")
+                    alert("악성코드 검출되지 않음");
                 } else {
                     alert("알 수 없는 결과");
                 }
+                $scope.malwareTestButtonMessage = "악성코드 검사";
+                $scope.isDisableMalwareTestButton = false;
             }, function errorCallback(response) {
                 console.log("error: ");
                 console.log(response);
+                alert("오류 발생");
+                $scope.malwareTestButtonMessage = "악성코드 검사";
+                $scope.isDisableMalwareTestButton = false;
             });
             console.log("악성코드 테스트 요청 끝");
         }

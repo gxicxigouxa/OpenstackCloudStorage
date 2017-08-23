@@ -26,7 +26,7 @@
                     <div layout="row" id="auto-classification-switch">
                         <md-switch ng-model="isAutoClassification" aria-label="auto-classification-switch">자동 분류</md-switch>
                         <input id="malwareTestButton" type="file" class="ng-hide" onchange="angular.element(this).scope().malwareTest(this)" aria-label="fileInput" name="malwareTestButton"></input>
-                        <label for="malwareTestButton" class="md-button md-primary">악성코드 테스트</label>
+                        <label for="malwareTestButton" class="md-button md-primary" ng-disabled="isDisableMalwareTestButton"><span ng-bind="malwareTestButtonMessage"></span></label>
                     </div>
                 </form>
             </div>

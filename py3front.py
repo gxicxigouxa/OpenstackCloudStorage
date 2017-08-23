@@ -381,12 +381,12 @@ def malwarecheck():
 		json_response = response.json()
 		print(json_response)
 		if json_response['response_code'] != 1:
-			return {'result':'Scan request fail'}
+			return jsonify({'result':'Scan request fail'})
 		else:
-			print("Scan request success. Wait for 5 seconds.")
-			time.sleep(5)
+			#print("Scan request success. Wait for 5 seconds.")
+			#sleep(5)
+			print("Scan request success.")
 			#분석 결과 요청
-			#이하 아직 테스트하지 못함
 			params = {'apikey': API_KEY, 'resource': json_response['resource']}
 			headers = {
 				"Accept-Encoding": "gzip, deflate",
@@ -394,16 +394,20 @@ def malwarecheck():
 			}
 			response = requests.get('https://www.virustotal.com/vtapi/v2/file/report', params=params, headers=headers)
 			#분석 결과 요청에 대한 결과
-			json_response = response
+			json_response = response.json()
 			print(json_response)
 			scanResults = list(json_response['scans'].values())
 			print(scanResults)
 			for scanResult in scanResults:
+				print("current result:")
+				print(scanResult)
+				print("current result's detected:")
+				print(scanResult['detected'])
 				if scanResult['detected']:
 					print("Virus detected!")
-					return {'result':'Virus detected'}
+					return jsonify({'result':'Virus detected'})
 			print("Virus not detected.")
-			return {'result':'Virus not detected'}
+			return jsonify({'result':'Virus not detected'})
 
 def scan_file(APIKEY,FilePath):
 	while(True):

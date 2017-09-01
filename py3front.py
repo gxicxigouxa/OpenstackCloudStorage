@@ -152,6 +152,16 @@ def num_only_file(pwd):
 
 @app.route('/login')
 def showloginpage():
+	#######get the admin token
+	headers = {"content-type":"application/json"}
+	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
+	print(json.dumps(data))
+	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	print(admin_token_response)
+	json_dict= json.loads(admin_token_response.text)
+	admin_token=json_dict['access']['token']['id']
+	print("session adminToken: " + admin_token)
+	session["adminToken"] = admin_token
 	return render_template('oldlogin.html',err_code ="no error")
 
 @app.route('/loginchk', methods=['POST','GET'])
@@ -185,23 +195,24 @@ def chklogin():
 				return redirect("/monitoring")
 			elif(result[0]["pwd"]==userPwd):#pwd is correct
 				#토큰 가져오기
-				'''
-				token_url = 'http://125.132.100.206:5000/v2.0/tokens'
+				print("after compare")		
+				token_url = 'http://183.103.47.19:5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
 				headers = {'content-type':'application/json'}
 				response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
 				json_data = json.loads(response.text)
 
 				token=json_data["access"]["token"]["id"]
+				
 				print("token: " + token)
 				session["token"] = token
 				session["userId"] = userId
-				'''
+				print("after session!")
 				#토큰 계속 요청하면 문제 생길 수 있으므로 임의의 토큰, 스토리지 목록을 만들어 보내자.
-				
+				'''
 				session["token"] = "0123123myuserrandomtoken3213210"
 				session["userId"] = userId
-				
+				'''
 				return redirect("/storage")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
@@ -241,7 +252,7 @@ def chksignup():
 			headers = {"content-type":"application/json"}
 			data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
 			print(json.dumps(data))
-			admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 			print(admin_token_response)
 			json_dict= json.loads(admin_token_response.text)
 			admin_token=json_dict['access']['token']['id']
@@ -250,13 +261,13 @@ def chksignup():
 			#### tenant create
 			headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 			data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
-			response = requests.post('http://125.132.100.206:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+			response = requests.post('http://183.103.47.19:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
 			print(response)
 			#############################
 			######User Create#######
 			#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 			data = {"user":{"email":signUpEmail,"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
-			response = requests.post('http://125.132.100.206:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+			response = requests.post('http://183.103.47.19:35357/v2.0/users',data = json.dumps(data),headers=headers)	
 			print(response)
 			json_dict = json.loads(response.text)
 			print(json_dict)
@@ -264,7 +275,7 @@ def chksignup():
 			###############################################
 			######Role Create ###########################
 			#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
-			response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+			response= requests.put('http://183.103.47.19:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
 			print(response)			
 			if not os.path.exists("/home/gxicxigouxa/myproject/users/" + signUpId):
 				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId)
@@ -313,7 +324,7 @@ def urltest():
 	
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
-	admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 	print(admin_token_response)
 	json_dict= json.loads(admin_token_response.text)
 	admin_token=json_dict['access']['token']['id']
@@ -326,19 +337,19 @@ def urltest():
 
 	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 	data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
-	response = requests.post('http://125.132.100.206:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+	response = requests.post('http://183.103.47.19:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
 	print(response)
 
 	#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 	data = {"user":{"email":signUpEmail,	"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
-	response = requests.post('http://125.132.100.206:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+	response = requests.post('http://183.103.47.19:35357/v2.0/users',data = json.dumps(data),headers=headers)	
 	print(response)
 	json_dict = json.loads(response.text)
 	print(json_dict)
 	user_id =json_dict['user']['id']# id is not real id (signup id is user nam ) ex>8cc705d2c8bc4a1f8874f50eee32fc92
 
 	#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
-	response= requests.put('http://125.132.100.206:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+	response= requests.put('http://183.103.47.19:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
 	print(response)
 
 	return "ok"
@@ -522,13 +533,15 @@ def storagepage():
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
 	print(json.dumps(data))
-	admin_token_response = requests.post('http://125.132.100.206:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 	print(admin_token_response)
 	json_dict= json.loads(admin_token_response.text)
 	admin_token=json_dict['access']['token']['id']
 	print("session adminToken: " + admin_token)
+	'''
 	#토큰에 대한 컨테이너 목록 요청
-	container_url ='http://125.132.100.206:8080/v1/AUTH_'+ session["userId"]
+	print(session["userId"])
+	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
 	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
 	response = requests.get(container_url,headers=headers)
 	print(container_url)
@@ -540,13 +553,13 @@ def storagepage():
 	print("session token: " + session["token"])
 	print("session containerList: ")
 	print(containerList)
-	'''
-	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
 	
+	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
+	'''
 	admin_token = "789789789thisistempadmintoken55555"
 	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
-	
-	return render_template("storage.html", token = session["token"], adminToken = admin_token, containerList = containerList)
+	'''
+	return render_template("storage.html", token = session["token"], adminToken = session["adminToken"], containerList = containerList)
 
 @app.route('/monitoring')
 def monitoringpage():
@@ -564,7 +577,7 @@ def createcontainer():
 	currentUserId = data["currentUserId"]
 	currentUserToken = data["currentUserToken"]
 	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)	
-	url ='http://125.132.100.206:8080/v1/AUTH_'+ currentUserId
+	url ='http://183.103.47.19:8080/v1/AUTH_'+ currentUserId
 	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
 	response = requests.put(url+ '/' +newContainerName, headers=headers)
 	print(url+'/'+ newContainerName)
@@ -577,7 +590,7 @@ def createcontainer():
 def requestFileList(userId, userToken, folderPath):
 	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
 	#지금 메인에서 보이는 컨테이너의 내용은 잘 보이는데 컨테이너의 폴더에 들어가면 잘 안된다.
-	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId
+	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url+'/'+ folderPath,headers=headers)
 	print(url + '/' + folderPath)
@@ -615,8 +628,10 @@ def requestfilelist():
 		print("currentUserId: " + currentUserId)
 		print("currentUserToken: " + currentUserToken)
 		print("currentFolderPath: " + currentFolderPath)
-		#return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
+		return jsonify(requestFileList(currentUserId, currentUserToken, currentFolderPath))
+		'''
 		return "업로드 테스트중. 우선 파일 목록 요청은 보류 중."
+		'''
 
 #TODO. 파일 업로드 요청.
 def requestFileUpload(userId, userToken, folderPath, toUploadFile):
@@ -652,7 +667,7 @@ def requestFileUpload(userId, userToken, folderPath, toUploadFile):
 	$scope.showUploadCompletedToast();
 	'''
 	#테스트 필요.
-	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
 	fileName = toUploadFile.filename
 	print("file name: " + fileName)
@@ -707,7 +722,7 @@ def requestFileDownload(userId, userToken, folderPath, fileName):
 	};
 	xhr.send();
 	'''
-	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
@@ -740,7 +755,7 @@ def requestFileDelete(userId, userToken, folderPath, fileName):
 	});
 	$scope.gridApi2.selection.clearSelectedRows();
 	'''
-	url = 'http://125.132.100.206:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'content-type':'text/html', 'cache-control':'no-cache'}

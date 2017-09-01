@@ -55,6 +55,30 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
             }
         };
 
+        /*
+                $scope.getAdminTokenDirect = function() {
+                    console.log("관리자 토큰 직접 요청 시작");
+                    $http({
+                        method: "POST",
+                        url: "http://183.103.47.19:5000/v2.0/tokens",
+                        headers: {
+                            "content-type": "application/json"
+                        },
+                        data: {
+                            "auth": { "tenantName": "admin", "passwordCredentials": { "username": "admin", "password": "openstack" } }
+                        }
+                    }).then(function successCallback(response) {
+                        console.log("success: ");
+                        console.log(response);
+                    }, function errorCallback(response) {
+                        console.log("error: ");
+                        console.log(response);
+                    });
+                    console.log("관리자 토큰 직접 요청 끝");
+                };
+
+                $scope.getAdminTokenDirect();
+        */
         //매개 변수로 전달받은 제목과 내용을 이용해 Material 디자인의 경고 다이얼로그 출력.
         $scope.showAlertDialog = function(title, data) {
             $scope.showDialog = function() {

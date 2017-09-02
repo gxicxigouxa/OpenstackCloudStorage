@@ -280,12 +280,24 @@ def chksignup():
 			if not os.path.exists("/home/gxicxigouxa/myproject/users/" + signUpId):
 				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId)
 				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + " success.")
-				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/")
-				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/ success.")
 				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/")
 				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/ success.")
 			###########################################
+			
+			headers ={'content-type':'application/json'}
+			data= {"auth":{"tenantName":signUpId,"passwordCredentials":{"username":signUpId,"password":signUpPwd}}}
+			res = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			json_dict= json.loads(res.text)
+			created_user_token=json_dict['access']['token']['id']
+			print("user_toekd: " + created_user_token)
+			headers = {'x-auth-token':created_user_token}
+			res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+signUpId+'/textcompare',headers=headers)
+			print(res)
+			res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+signUpId+'/malware',headers=headers)      
+			print(res)
+			
 			return render_template('oldlogin.html',login_err_code ="none", sign_up_err_code = "success")
+			
 		else:
 			return render_template('oldlogin.html', login_err_code = "none", sign_up_err_code = "existed id")
 
@@ -428,15 +440,15 @@ def scan_file(APIKEY,FilePath):
 		elif(scan_response['response_code']==-2):
 			print("Wait For 30 sec")
 			time.sleep(30)
-			continue;
+			continue
 			
 		elif(scan_response['response_code']==-1):
 			print("ERROR")
 
-			return 'error';
+			return 'error'
 		else:#0
 			print("NO data !! ")
-			return "NO Data";
+			return "NO Data"
 
 def report_file(APIKEY,Resource):
 	while(True):
@@ -456,7 +468,7 @@ def report_file(APIKEY,Resource):
 	
 		scan = json_response.get('scans',{})
 
-		scan_keys= scan.keys();
+		scan_keys= scan.keys()
 		print(scan_keys)
 		print(json_response)
 		if(json_response['response_code'] == 1):
@@ -472,14 +484,14 @@ def report_file(APIKEY,Resource):
 		elif(json_response['response_code'] == -2):
 			print("Still Analysis.... Wait for 20 sec")
 			time.sleep(20)
-			continue;
+			continue
 		elif(scan_response['response_code']==-1):
 			print("ERROR")
 
-			return 'error';
+			return 'error'
 		else:# 0
 			print("NO data !! ")
-			return "NO Data";
+			return "NO Data"
 
 
 '''
@@ -524,17 +536,6 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
-	'''
-	#######get the admin token
-	headers = {"content-type":"application/json"}
-	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
-	print(json.dumps(data))
-	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
-	print(admin_token_response)
-	json_dict= json.loads(admin_token_response.text)
-	admin_token=json_dict['access']['token']['id']
-	print("session adminToken: " + admin_token)
-	'''
 	#토큰에 대한 컨테이너 목록 요청
 	print(session["userId"])
 	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]

@@ -500,37 +500,71 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             console.log("다음 요청할 폴더 경로: " + $scope.currentPath);
             $scope.existFilesGridData.data = [];
             console.log("파일 목록 요청 시작");
-            $http({
-                method: "POST",
-                url: "/requestfilelist",
-                data: {
-                    "currentUserId": currentUserId,
-                    "currentUserToken": currentUserToken,
-                    "currentFolderPath": $scope.currentPath
-                }
-            }).then(function successCallback(response) {
-                console.log("success: ");
-                console.log("받은 데이터:");
-                console.log(response);
-                if ($scope.currentPath != $scope.containerName) {
-                    $scope.existFilesGridData.data.push({
-                        "name": "(이전 폴더)",
-                        "lastUpdate": "..",
-                        "size": "..",
-                        "format": "폴더"
-                    });
-                }
-                for (var i = 0; i < response.data.folders.length; ++i) {
-                    $scope.existFilesGridData.data.push(response.data.folders[i]);
-                }
-                for (var i = 0; i < response.data.files.length; ++i) {
-                    $scope.existFilesGridData.data.push(response.data.files[i]);
-                }
-                console.log("현재 경로: " + $scope.currentPath);
-            }, function errorCallback(response) {
-                console.log("error: " + response);
-            });
-            console.log("파일 목록 요청 끝");
+            if ($scope.currentPath == $scope.containerName) {
+                $http({
+                    method: "POST",
+                    url: "/requestfilelist",
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    if ($scope.currentPath != $scope.containerName) {
+                        $scope.existFilesGridData.data.push({
+                            "name": "(이전 폴더)",
+                            "lastUpdate": "..",
+                            "size": "..",
+                            "format": "폴더"
+                        });
+                    }
+                    for (var i = 0; i < response.data.folders.length; ++i) {
+                        $scope.existFilesGridData.data.push(response.data.folders[i]);
+                    }
+                    for (var i = 0; i < response.data.files.length; ++i) {
+                        $scope.existFilesGridData.data.push(response.data.files[i]);
+                    }
+                    console.log("현재 경로: " + $scope.currentPath);
+                }, function errorCallback(response) {
+                    console.log("error: " + response);
+                });
+                console.log("파일 목록 요청 끝");
+            } else {
+                $http({
+                    method: "POST",
+                    url: "/requestinnerfilelist",
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    if ($scope.currentPath != $scope.containerName) {
+                        $scope.existFilesGridData.data.push({
+                            "name": "(이전 폴더)",
+                            "lastUpdate": "..",
+                            "size": "..",
+                            "format": "폴더"
+                        });
+                    }
+                    for (var i = 0; i < response.data.folders.length; ++i) {
+                        $scope.existFilesGridData.data.push(response.data.folders[i]);
+                    }
+                    for (var i = 0; i < response.data.files.length; ++i) {
+                        $scope.existFilesGridData.data.push(response.data.files[i]);
+                    }
+                    console.log("현재 경로: " + $scope.currentPath);
+                }, function errorCallback(response) {
+                    console.log("error: " + response);
+                });
+                console.log("파일 목록 요청 끝");
+            }
         };
 
         //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.

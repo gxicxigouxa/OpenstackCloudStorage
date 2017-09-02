@@ -629,6 +629,60 @@ def requestfilelist():
 		return "업로드 테스트중. 우선 파일 목록 요청은 보류 중."
 		'''
 
+def requestInnerFileList(userId, userToken, folderPath):
+	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
+	#지금 메인에서 보이는 컨테이너의 내용은 잘 보이는데 컨테이너의 폴더에 들어가면 잘 안된다.
+	containerName = folderPath[:folderPath.find('/')]
+	url = 'http://183.103.47.19:8080/v1/AUTH_' + userId + '/' + containerName + '?prefix=' + folderPath[folderPath.find('/') + 1:] + '/&delimiter=/'
+	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
+	response = requests.get(url,headers=headers)
+	print(url)
+	print(response.text)
+	print(response.text.split("\n")[:-1])
+	rawPathList = []
+	cuttedPathList = []
+	rawPathList.extend(response.text.split("\n")[:-1])
+	parsedFolderSet = set()
+	parsedFileSet = set()
+	print("rawPathList: ")
+	print (rawPathList)
+	print( folderPath[folderPath.find('/') + 1:])
+	cur_folderpath=folderPath[folderPath.find('/') + 1:]+'/'
+	for rawPath in rawPathList:
+		print(rawPath)
+		strarray = rawPath.split(cur_folderpath)
+		if len(strarray) >= 2:
+			cuttedPathList.append(strarray[1])
+	print("cutted List: ")
+	print(cuttedPathList[1:])
+	for currentPath in cuttedPathList[1:]:
+		if currentPath.find('/') is not -1:
+			parsedFolderSet.add(currentPath[:currentPath.find('/')])
+		else:
+			parsedFileSet.add(currentPath)
+	print(list(parsedFolderSet))
+	print(list(parsedFileSet))
+	folderData = []
+	fileData = []
+	for currentFolder in parsedFolderSet:
+		folderData.append({"name":currentFolder, "lastUpdate":"만든 날짜(폴더)", "size":"폴더의 크기", "format":"폴더"})
+	for currentFile in parsedFileSet:
+		fileData.append({"name":currentFile, "lastUpdate":"만든 날짜(파일)", "size":"파일의 크기", "format":"파일"})
+	forSendData = {"folders":folderData, "files":fileData}
+	return forSendData
+@app.route('/requestinnerfilelist', methods=['GET', 'POST'])
+def requestinnerfilelist():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		print("파일 리스트 요청.")
+		print("currentUserId: " + currentUserId)
+		print("currentUserToken: " + currentUserToken)
+		print("currentFolderPath: " + currentFolderPath)
+		return jsonify(requestInnerFileList(currentUserId, currentUserToken, currentFolderPath))	
+
 #TODO. 파일 업로드 요청.
 def requestFileUpload(userId, userToken, folderPath, toUploadFile):
 	'''

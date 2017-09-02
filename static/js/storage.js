@@ -204,17 +204,11 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     $scope.gridOptions.noUnselect = true;
     $scope.gridOptions.data = [];
 
-    /*
-    //받은 스토리지 폴더 먼저 초기화.
-    $scope.addExistedStorage = function() {
-        for (var i = 0; i < $scope.storageList.length; ++i) {
-            $scope.gridOptions.data.push({ name: $scope.storageList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
-        }
-    }
-    */
     $scope.addExistedStorage = function() {
         for (var i = 0; i < containerList.length; ++i) {
-            $scope.gridOptions.data.push({ name: containerList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+            if (containerList[i] != "malware" && containerList[i] != "textcompare") {
+                $scope.gridOptions.data.push({ name: containerList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+            }
         }
     }
     $scope.addExistedStorage();
@@ -906,6 +900,503 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 .position(pinTo)
                 .hideDelay(3000)
             );
+        };
+    };
+
+    //자동 분류로 저장된 파일의 내용을 보여주는 다이얼로그를 출력하기 위한 함수.
+    $scope.showAutoClassifiedListDialog = function(event) {
+        //templateUrl로 지정된 외부 html 파일을 dialog로 출력하고 이를 위한 Controller는
+        //controller로 지정된 함수를 사용.
+        $mdDialog.show({
+            controller: autoClassifiedListDialogController,
+            templateUrl: 'dialog/simple_folder_dialog.html',
+            parent: angular.element(document.body),
+            targetEvent: event,
+            clickOutsideToClose: true,
+        });
+    };
+
+    //매개 변수로 AngularJS에 대한 전역 변수, 다이얼로그 변수를 전달해
+    //자동 분류 파일 목록 다이얼로그의 컨트롤러를 구성하기 위한 함수.
+    function autoClassifiedListDialogController($scope, $mdDialog) {
+        $scope.containerName = selectedFolderName;
+        $scope.currentPath = "textcompare";
+        $scope.selectedFolder;
+        $scope.lastSelectedItem;
+        var existFiles = [];
+        $scope.selectedExistFile = [];
+        $scope.existFilesGridData = {
+            //마우스로 grid에 보이는 데이터 선택 가능.
+            enableRowSelection: true,
+            //데이터 선택을 위해 따로 앞쪽에 checkbox 만들지 않음.
+            enableRowHeaderSelection: false,
+            //검색 가능.
+            enableFiltering: true,
+            //표시할 데이터.
+            data: 'existFilesGridData.data',
+            //데이터 열 정의.
+            columnDefs: [{
+                field: 'name',
+                displayName: '이름'
+            }, {
+                field: 'lastUpdate',
+                displayName: '생성 날짜'
+            }, {
+                field: 'size',
+                displayName: '크기'
+            }, {
+                field: 'format',
+                displayName: '형식'
+            }]
+        };
+        //여러 데이터 선택 불가.
+        $scope.existFilesGridData.multiSelect = false;
+        //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 불가.
+        $scope.existFilesGridData.modifierKeysToMultiSelect = false;
+        //한번 더 선택하면 선택 취소 불가.
+        $scope.existFilesGridData.noUnselect = false;
+        //grid에 대한 데이터 초기화.
+        $scope.existFilesGridData.data = [];
+        //grid에 대한 callback 함수를 정의.
+        //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 파일 또는 폴더 구분 가능.
+        $scope.existFilesGridData.onRegisterApi = function(gridApi) {
+            $scope.gridApi2 = gridApi;
+            gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+                if ($scope.selectedExistFile.length != 0) {
+                    $scope.lastSelectedItem = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "파일") {
+                        console.log("선택된 파일의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                    } else if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "폴더") {
+                        console.log("선택된 폴더의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                        $scope.selectedFolder = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    } else {
+                        console.log("선택된 것: ");
+                        console.log($scope.selectedExistFile);
+                    }
+                }
+            });
+            gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+            });
+        };
+
+        $scope.changeFolder = function() {
+            console.log($scope.selectedFolder);
+            console.log($scope.selectedFolder.name);
+            console.log($scope.selectedFolder.lastUpdate);
+            console.log($scope.selectedFolder.size);
+            if ($scope.selectedFolder.name == ("(이전 폴더)") && $scope.selectedFolder.lastUpdate == ".." && $scope.selectedFolder.size == "..") {
+                console.log("이전 폴더로 이동");
+                $scope.currentPath = $scope.currentPath.substring(0, $scope.currentPath.lastIndexOf("/"));
+            } else {
+                console.log("그냥 폴더로 이동")
+                $scope.currentPath += ("/" + $scope.selectedFolder.name);
+            }
+            console.log("다음 요청할 폴더 경로: " + $scope.currentPath);
+            $scope.existFilesGridData.data = [];
+            console.log("파일 목록 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfilelist",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+                if ($scope.currentPath != $scope.containerName) {
+                    $scope.existFilesGridData.data.push({
+                        "name": "(이전 폴더)",
+                        "lastUpdate": "..",
+                        "size": "..",
+                        "format": "폴더"
+                    });
+                }
+                for (var i = 0; i < response.data.folders.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.folders[i]);
+                }
+                for (var i = 0; i < response.data.files.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.files[i]);
+                }
+                console.log("현재 경로: " + $scope.currentPath);
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("파일 목록 요청 끝");
+        };
+
+        //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.
+        //해당 폴더에 대한 다이얼로그가 나타나도록 구성.
+        $scope.onDblClickRow = function(row) {
+            console.log("무언가 더블클릭됨");
+            console.log($scope.lastSelectedItem);
+            console.log($scope.selectedFolder);
+            if ($scope.lastSelectedItem == $scope.selectedFolder) {
+                console.log("폴더 " + $scope.selectedFolder.name + "이(가) 더블클릭됨.");
+                $scope.changeFolder();
+            }
+        };
+        console.log("파일 목록 요청 시작");
+        $http({
+            method: "POST",
+            url: "/requestfilelist",
+            data: {
+                "currentUserId": currentUserId,
+                "currentUserToken": currentUserToken,
+                "currentFolderPath": $scope.currentPath
+            }
+        }).then(function successCallback(response) {
+            console.log("success: ");
+            console.log("받은 데이터:");
+            console.log(response);
+
+            for (var i = 0; i < response.data.folders.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.folders[i]);
+            }
+            for (var i = 0; i < response.data.files.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.files[i]);
+            }
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
+        console.log("파일 목록 요청 끝");
+
+        //파일 grid에 대해 선택된 열이 없는지를 판단.        
+        $scope.isNotSelectedExistFiles = function() {
+            if ($scope.selectedExistFile.length == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        //dialog 닫기.
+        $scope.hide = function() {
+            $mdDialog.hide();
+        };
+
+        //dialog 취소.
+        $scope.cancel = function() {
+            $mdDialog.cancel();
+        };
+    };
+
+        //자동 분류로 저장된 파일의 내용을 보여주는 다이얼로그를 출력하기 위한 함수.
+    $scope.showAutoClassifiedListDialog = function(event) {
+        //templateUrl로 지정된 외부 html 파일을 dialog로 출력하고 이를 위한 Controller는
+        //controller로 지정된 함수를 사용.
+        $mdDialog.show({
+            controller: autoClassifiedListDialogController,
+            templateUrl: 'dialog/simple_folder_dialog.html',
+            parent: angular.element(document.body),
+            targetEvent: event,
+            clickOutsideToClose: true,
+        });
+    };
+
+    //매개 변수로 AngularJS에 대한 전역 변수, 다이얼로그 변수를 전달해
+    //자동 분류 파일 목록 다이얼로그의 컨트롤러를 구성하기 위한 함수.
+    function autoClassifiedListDialogController($scope, $mdDialog) {
+        $scope.containerName = selectedFolderName;
+        $scope.currentPath = "textcompare";
+        $scope.selectedFolder;
+        $scope.lastSelectedItem;
+        var existFiles = [];
+        $scope.selectedExistFile = [];
+        $scope.existFilesGridData = {
+            //마우스로 grid에 보이는 데이터 선택 가능.
+            enableRowSelection: true,
+            //데이터 선택을 위해 따로 앞쪽에 checkbox 만들지 않음.
+            enableRowHeaderSelection: false,
+            //검색 가능.
+            enableFiltering: true,
+            //표시할 데이터.
+            data: 'existFilesGridData.data',
+            //데이터 열 정의.
+            columnDefs: [{
+                field: 'name',
+                displayName: '이름'
+            }, {
+                field: 'lastUpdate',
+                displayName: '생성 날짜'
+            }, {
+                field: 'size',
+                displayName: '크기'
+            }, {
+                field: 'format',
+                displayName: '형식'
+            }]
+        };
+        //여러 데이터 선택 불가.
+        $scope.existFilesGridData.multiSelect = false;
+        //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 불가.
+        $scope.existFilesGridData.modifierKeysToMultiSelect = false;
+        //한번 더 선택하면 선택 취소 불가.
+        $scope.existFilesGridData.noUnselect = false;
+        //grid에 대한 데이터 초기화.
+        $scope.existFilesGridData.data = [];
+        //grid에 대한 callback 함수를 정의.
+        //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 파일 또는 폴더 구분 가능.
+        $scope.existFilesGridData.onRegisterApi = function(gridApi) {
+            $scope.gridApi2 = gridApi;
+            gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+                if ($scope.selectedExistFile.length != 0) {
+                    $scope.lastSelectedItem = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "파일") {
+                        console.log("선택된 파일의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                    } else if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "폴더") {
+                        console.log("선택된 폴더의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                        $scope.selectedFolder = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    } else {
+                        console.log("선택된 것: ");
+                        console.log($scope.selectedExistFile);
+                    }
+                }
+            });
+            gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+            });
+        };
+
+        $scope.changeFolder = function() {
+            console.log($scope.selectedFolder);
+            console.log($scope.selectedFolder.name);
+            console.log($scope.selectedFolder.lastUpdate);
+            console.log($scope.selectedFolder.size);
+            if ($scope.selectedFolder.name == ("(이전 폴더)") && $scope.selectedFolder.lastUpdate == ".." && $scope.selectedFolder.size == "..") {
+                console.log("이전 폴더로 이동");
+                $scope.currentPath = $scope.currentPath.substring(0, $scope.currentPath.lastIndexOf("/"));
+            } else {
+                console.log("그냥 폴더로 이동")
+                $scope.currentPath += ("/" + $scope.selectedFolder.name);
+            }
+            console.log("다음 요청할 폴더 경로: " + $scope.currentPath);
+            $scope.existFilesGridData.data = [];
+            console.log("파일 목록 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfilelist",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+                if ($scope.currentPath != $scope.containerName) {
+                    $scope.existFilesGridData.data.push({
+                        "name": "(이전 폴더)",
+                        "lastUpdate": "..",
+                        "size": "..",
+                        "format": "폴더"
+                    });
+                }
+                for (var i = 0; i < response.data.folders.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.folders[i]);
+                }
+                for (var i = 0; i < response.data.files.length; ++i) {
+                    $scope.existFilesGridData.data.push(response.data.files[i]);
+                }
+                console.log("현재 경로: " + $scope.currentPath);
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("파일 목록 요청 끝");
+        };
+
+        //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.
+        //해당 폴더에 대한 다이얼로그가 나타나도록 구성.
+        $scope.onDblClickRow = function(row) {
+            console.log("무언가 더블클릭됨");
+            console.log($scope.lastSelectedItem);
+            console.log($scope.selectedFolder);
+            if ($scope.lastSelectedItem == $scope.selectedFolder) {
+                console.log("폴더 " + $scope.selectedFolder.name + "이(가) 더블클릭됨.");
+                $scope.changeFolder();
+            }
+        };
+        console.log("파일 목록 요청 시작");
+        $http({
+            method: "POST",
+            url: "/requestfilelist",
+            data: {
+                "currentUserId": currentUserId,
+                "currentUserToken": currentUserToken,
+                "currentFolderPath": $scope.currentPath
+            }
+        }).then(function successCallback(response) {
+            console.log("success: ");
+            console.log("받은 데이터:");
+            console.log(response);
+
+            for (var i = 0; i < response.data.folders.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.folders[i]);
+            }
+            for (var i = 0; i < response.data.files.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.files[i]);
+            }
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
+        console.log("파일 목록 요청 끝");
+
+        //파일 grid에 대해 선택된 열이 없는지를 판단.        
+        $scope.isNotSelectedExistFiles = function() {
+            if ($scope.selectedExistFile.length == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        //dialog 닫기.
+        $scope.hide = function() {
+            $mdDialog.hide();
+        };
+
+        //dialog 취소.
+        $scope.cancel = function() {
+            $mdDialog.cancel();
+        };
+    };
+
+    //악성 코드로 분류된 파일의 내용을 보여주는 다이얼로그를 출력하기 위한 함수.
+    $scope.showMalwareFileListDialog = function(event) {
+        //templateUrl로 지정된 외부 html 파일을 dialog로 출력하고 이를 위한 Controller는
+        //controller로 지정된 함수를 사용.
+        $mdDialog.show({
+            controller: malwareFileListDialogController,
+            templateUrl: 'dialog/simple_folder_dialog.html',
+            parent: angular.element(document.body),
+            targetEvent: event,
+            clickOutsideToClose: true,
+        });
+    };
+
+    //매개 변수로 AngularJS에 대한 전역 변수, 다이얼로그 변수를 전달해
+    //자동 분류 파일 목록 다이얼로그의 컨트롤러를 구성하기 위한 함수.
+    function malwareFileListDialogController($scope, $mdDialog) {
+        $scope.containerName = selectedFolderName;
+        $scope.currentPath = "malware";
+        $scope.selectedFolder;
+        $scope.lastSelectedItem;
+        var existFiles = [];
+        $scope.selectedExistFile = [];
+        $scope.existFilesGridData = {
+            //마우스로 grid에 보이는 데이터 선택 가능.
+            enableRowSelection: true,
+            //데이터 선택을 위해 따로 앞쪽에 checkbox 만들지 않음.
+            enableRowHeaderSelection: false,
+            //검색 가능.
+            enableFiltering: true,
+            //표시할 데이터.
+            data: 'existFilesGridData.data',
+            //데이터 열 정의.
+            columnDefs: [{
+                field: 'name',
+                displayName: '이름'
+            }, {
+                field: 'lastUpdate',
+                displayName: '생성 날짜'
+            }, {
+                field: 'size',
+                displayName: '크기'
+            }, {
+                field: 'format',
+                displayName: '형식'
+            }]
+        };
+        //여러 데이터 선택 불가.
+        $scope.existFilesGridData.multiSelect = false;
+        //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 불가.
+        $scope.existFilesGridData.modifierKeysToMultiSelect = false;
+        //한번 더 선택하면 선택 취소 불가.
+        $scope.existFilesGridData.noUnselect = false;
+        //grid에 대한 데이터 초기화.
+        $scope.existFilesGridData.data = [];
+        //grid에 대한 callback 함수를 정의.
+        //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 파일 또는 폴더 구분 가능.
+        $scope.existFilesGridData.onRegisterApi = function(gridApi) {
+            $scope.gridApi2 = gridApi;
+            gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+                if ($scope.selectedExistFile.length != 0) {
+                    $scope.lastSelectedItem = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "파일") {
+                        console.log("선택된 파일의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                    } else if ($scope.selectedExistFile[$scope.selectedExistFile.length - 1].format == "폴더") {
+                        console.log("선택된 폴더의 이름: " + $scope.selectedExistFile[$scope.selectedExistFile.length - 1].name);
+                        $scope.selectedFolder = $scope.selectedExistFile[$scope.selectedExistFile.length - 1];
+                    } else {
+                        console.log("선택된 것: ");
+                        console.log($scope.selectedExistFile);
+                    }
+                }
+            });
+            gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
+                $scope.selectedExistFile = gridApi.selection.getSelectedRows();
+            });
+        };
+        //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.
+        //해당 폴더에 대한 다이얼로그가 나타나도록 구성.
+        $scope.onDblClickRow = function(row) {
+            console.log("무언가 더블클릭됨");
+            console.log($scope.lastSelectedItem);
+            console.log($scope.selectedFolder);
+            if ($scope.lastSelectedItem == $scope.selectedFolder) {
+                console.log("폴더 " + $scope.selectedFolder.name + "이(가) 더블클릭됨.");
+                $scope.changeFolder();
+            }
+        };
+        console.log("파일 목록 요청 시작");
+        $http({
+            method: "POST",
+            url: "/requestfilelist",
+            data: {
+                "currentUserId": currentUserId,
+                "currentUserToken": currentUserToken,
+                "currentFolderPath": $scope.currentPath
+            }
+        }).then(function successCallback(response) {
+            console.log("success: ");
+            console.log("받은 데이터:");
+            console.log(response);
+
+            for (var i = 0; i < response.data.folders.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.folders[i]);
+            }
+            for (var i = 0; i < response.data.files.length; ++i) {
+                $scope.existFilesGridData.data.push(response.data.files[i]);
+            }
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
+        console.log("파일 목록 요청 끝");
+
+        //파일 grid에 대해 선택된 열이 없는지를 판단.        
+        $scope.isNotSelectedExistFiles = function() {
+            if ($scope.selectedExistFile.length == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        //dialog 닫기.
+        $scope.hide = function() {
+            $mdDialog.hide();
+        };
+
+        //dialog 취소.
+        $scope.cancel = function() {
+            $mdDialog.cancel();
         };
     };
 

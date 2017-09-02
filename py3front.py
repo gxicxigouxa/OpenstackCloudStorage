@@ -284,10 +284,6 @@ def chksignup():
 				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/ success.")
 				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/")
 				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/textcompare/ success.")
-				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/malware/")
-				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/malware/ success.")
-				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId + "/malware/notmalware/")
-				print("mkdir /home/gxicxigouxa/myproject/users/" + signUpId + "/malware/notmalware/ success.")
 			###########################################
 			return render_template('oldlogin.html',login_err_code ="none", sign_up_err_code = "success")
 		else:

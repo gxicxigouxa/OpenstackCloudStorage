@@ -960,6 +960,9 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.lastSelectedItem;
         var existFiles = [];
         $scope.selectedExistFile = [];
+        $scope.isClickedNewFolderButton = false;
+        $scope.newFolderName = "";
+        $scope.hiddenUserId = currentUserId;
         $scope.existFilesGridData = {
             //마우스로 grid에 보이는 데이터 선택 가능.
             enableRowSelection: true,
@@ -1017,6 +1020,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         };
 
         $scope.changeFolder = function() {
+            $scope.isClickedNewFolderButton = false;
             console.log($scope.selectedFolder);
             console.log($scope.selectedFolder.name);
             console.log($scope.selectedFolder.lastUpdate);
@@ -1044,7 +1048,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("success: ");
                     console.log("받은 데이터:");
                     console.log(response);
-                    if ($scope.currentPath != $scope.containerName) {
+                    if ($scope.currentPath != "textcompare") {
                         $scope.existFilesGridData.data.push({
                             "name": "(이전 폴더)",
                             "lastUpdate": "..",
@@ -1190,15 +1194,18 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             $scope.showUploadCompletedToast();
             */
             //TODO.
+            
             var obj;
             var fileName;
             var extName;
+            
             // 파일을 업로드 한다.
             if ($scope.isAutoClassification) {
                 var uploadFile = document.getElementById("fileClassificationButton")
             } else {
                 var uploadFile = document.getElementById("fileUploadButton")
             }
+            
             
             obj = document.actFrm.upFile;
             if (obj.value != "") {
@@ -1210,7 +1217,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             }
             console.log("uploadFile.files:");
             console.log(uploadFile.files);
-
+            
             if (!$scope.isAutoClassification) {
                 console.log("파일 업로드 요청 시작(일반)");
                 Upload.upload({
@@ -1234,7 +1241,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("파일 업로드 요청 시작(자동분류)");
                 Upload.upload({
                     url: "/textcompare",
-                    file: uploadFile.files[0],
+                    file: uploadFile.files,
                     data: {
                         "currentUserId": currentUserId,
                         "currentUserToken": currentUserToken,
@@ -1252,6 +1259,12 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             }
         };
 
+        function passId(){
+            console.log("asdfasdfasdfasdf");
+            document.getElementById("userId").value = currentUserId;
+            document.forms['distri_Frm'].submit();
+        }
+
         $scope.fileChangedByClassificationButton = function(element) {
             $scope.isAutoClassification = true;
             $scope.fileChanged(element);
@@ -1263,8 +1276,30 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         };
 
         //TODO.
-        $scope.createNewFolder = function() {
+        $scope.showCreateNewFolderForm = function() {
+            $scope.newFolderName = "";
+            $scope.isClickedNewFolderButton = true;
+        };
 
+        $scope.createNewFolder = function() {
+            $http({
+                method: "POST",
+                url: "/requestcreatefolder",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentNewFolderName": $scope.newFolderName
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+                $scope.existFilesGridData.data.push({ name: $scope.newFolderName, lastUpdate: "만든 날짜(폴더)", size: "폴더의 크기", format: "폴더" });
+                //$scope.$apply;
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            $scope.isClickedNewFolderButton = false;
         };
 
         //파일 grid에 대해 선택된 열이 없는지를 판단.        

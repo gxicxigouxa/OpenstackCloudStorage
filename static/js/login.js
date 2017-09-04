@@ -223,6 +223,35 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         setLoginErrCode("none");
         $scope.sign_up_result($scope.signUpErrorCode);
         setSignUpErrCode("none");
+
+        //매개 변수로 이벤트를 전달해 결제에 대한 다이얼로그를 출력하기 위한 함수.
+        $scope.showPaymentDialog = function(event) {
+        $mdDialog.show({
+            controller: paymentDialogController,
+            templateUrl: 'dialog/payment_dialog.html',
+            parent: angular.element(document.body),
+            targetEvent: event,
+            clickOutsideToClose: true,
+        });
+
+        function paymentDialogController($scope) {
+            $scope.paymentUserId = "";
+            $scope.paymentUserPassword = "";
+            
+            
+            //dialog 닫기.
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            //dialog 취소.
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+        }
+    };
+
+
     }])
     //UnhandledRejection 오류 해결(AngularJS 1.6.x 버그)
     //HTML에서 변수 바인딩 문자를 {{, }}에서 [[, ]]로 교체(Flask Jinja2와 충돌)

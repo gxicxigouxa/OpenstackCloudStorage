@@ -150,9 +150,12 @@
                     </div>
                 </div>
             </div>
-            <div class="mdl-grid demo-content ">
-                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent " style="float:right; background:#006666; color:white; width:100%; max-width:500px; margin:auto; " ng-click="clickSignUpButton() " ng-hide='hideLoginWindowFlag'>
+            <div class="mdl-grid demo-content" style="max-width:500px;">
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent " style="background:#006666; color:white; width:100%; max-width:500px; margin:auto; " ng-click="clickSignUpButton() " ng-hide='hideLoginWindowFlag'>
                     회원가입
+                </button>
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent " style="background:gray; color:white; width:100%; max-width:500px; margin:auto; margin-top: 10px" ng-click="showPaymentDialog()" ng-hide='hideLoginWindowFlag'>
+                    결제
                 </button>
             </div>
         </main>

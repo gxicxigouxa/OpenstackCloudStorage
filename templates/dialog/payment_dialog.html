@@ -1,0 +1,41 @@
+<md-dialog aria-label="paymentDialogContent" class="payment-content-container">
+    <div class="md-toolbar-tools">
+        <h2>
+            스토리지 결제
+        </h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="payment_dialog-header">
+            </div>
+            <div class="payment_dialog-container" layout-gt-xs="column">
+                <md-input-container class="md-block" flax-gt-xs>
+                    <label>ID</label>
+                    <input ng-model="paymentUserId">
+                </md-input-container>
+                <md-input-container class="md-block" flax-gt-xs>
+                    <label>비밀번호</label>
+                    <input ng-model="paymentUserPassword">
+                </md-input-container>
+            </div>
+            <div id="payment_dialog-month-select-radio-button">
+                <p>스토리지 사용 기간 선택</p>
+                <md-radio-group>
+                    <md-radio-button value="1">1개월</md-radio-button>
+                    <md-radio-button value="3">3개월</md-radio-button>
+                    <md-radio-button value="6">6개월</md-radio-button>
+                    <md-radio-button value="12">12개월</md-radio-button>
+                </md-radio-group>
+            </div>
+            <div class="payment_dialog-button">
+                <md-button ng-click="clickOkButton()">확인</md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

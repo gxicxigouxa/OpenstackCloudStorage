@@ -131,6 +131,9 @@ class StemmedCountVectorizer(CountVectorizer):
       analyzer = super(StemmedCountVectorizer,self).build_analyzer()
       return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
 
+def get_file_list(path):
+	filelist=[]
+
 def allowed_file(filename):
    return '.' in filename and \
       filename.rsplit('.',1)[1] in ALLOWED_EXTENSIONS
@@ -686,40 +689,7 @@ def requestinnerfilelist():
 
 #TODO. 파일 업로드 요청.
 def requestFileUpload(userId, userToken, folderPath, toUploadFile):
-	'''
-	var obj;
-	var fileName;
-	var extName;
-	// 파일을 업로드 한다.
-	var uploadFile = document.getElementById("fileInputButton")
-	obj = document.actFrm.upFile;
-	if (obj.value != "") {
-		var pathHeader = obj.value.lastIndexOf("\\");
-		var pathMiddle = obj.value.lastIndexOf(".");
-		var pathEnd = obj.value.length;
-		fileName = obj.value.substring(pathHeader + 1, pathMiddle);
-		extName = obj.value.substring(pathMiddle + 1, pathEnd);
-	}
-	var xhr = new XMLHttpRequest(); //파일을 업로드 하기 위한 객체
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4 && xhr.status == 200) { //4:complete state 200 : 이상없음
-		}
-	};
-
-	//맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
-	xhr.open("PUT", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + fileName + "." + extName), true);
-	xhr.setRequestHeader("X-File-Name", encodeURIComponent(uploadFile.files[0].name));
-	//토큰 갱신될때마다 계속 바꿔주기 
-	xhr.setRequestHeader("x-auth-token", getTokenFromSession());
-	xhr.setRequestHeader("content-type", "text/html");
-	xhr.setRequestHeader("cache-control", "no-cache");
-	xhr.send(uploadFile.files[0]);
-	$scope.$apply();
-	$scope.showUploadCompletedToast();
-	'''
-	#테스트 필요.
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
-	#fileName에 encodeURIComponent를 걸어야 하나?...
 	fileName = toUploadFile.filename
 	print("file name: " + fileName)
 	headers  ={'X-File-Name':fileName, 'x-auth-token':userToken,'content-type':'text/html', 'cache-control':'no-cache'}
@@ -736,8 +706,6 @@ def requestfileupload():
 		currentUserToken = data["currentUserToken"]
 		currentFolderPath = data["currentFolderPath"]
 		currentToUploadFile = fileData["file"]
-		#잘못된 동작을 수행하면 바로 코드 400을 던져버린다...
-		#정확히는 MultiDict 형에서 KeyError가 발생하면 400 BAD REQUEST를 던진다.
 		print("파일 업로드 요청.")
 		print("currentUserId: " + currentUserId)
 		print("currentUserToken: " + currentUserToken)
@@ -774,13 +742,15 @@ def requestFileDownload(userId, userToken, folderPath, fileName):
 	xhr.send();
 	'''
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
-	#fileName에 encodeURIComponent를 걸어야 하나?...
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
 	response = requests.get(url + '/' + fileName, headers=headers)
 	print(url + '/' + fileName)
 	print(response.text)
-	return response
+	print("response: ")
+	print(response)
+	#버그 발생. 다운로드할 파일을 어떻게 전달해야할지 모르겠다...
+	return {"response":response}
 @app.route('/requestfiledownload', methods = ['POST'])
 def requestfiledownload():
 	if request.method == 'POST':
@@ -793,19 +763,6 @@ def requestfiledownload():
 
 #TODO. 파일 삭제 요청.
 def requestFileDelete(userId, userToken, folderPath, fileName):
-	'''
-	var xhr = new XMLHttpRequest(); //파일을 삭제하기 위한 객체
-	//맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
-	xhr.open("DELETE", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + selectedFolderName + "/" + $scope.selectedExistFile[0].name), true);
-	xhr.setRequestHeader("x-auth-token", getTokenFromSession()); //토큰 갱신될때마다 계속 바꿔주기 
-	xhr.setRequestHeader("content-type", "text/html");
-	xhr.setRequestHeader("cache-control", "no-cache");
-	xhr.send();
-	angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
-		$scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
-	});
-	$scope.gridApi2.selection.clearSelectedRows();
-	'''
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
 	print("file name: " + fileName)
@@ -813,7 +770,7 @@ def requestFileDelete(userId, userToken, folderPath, fileName):
 	response = requests.delete(url + '/' + fileName, headers=headers)
 	print(url + '/' + fileName)
 	print(response.text)
-	return response
+	return response.text
 @app.route('/requestfiledelete', methods = ['POST'])
 def requestfiledelete():
 	if request.method == 'POST':
@@ -824,177 +781,187 @@ def requestfiledelete():
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDelete(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
+#TODO. 폴더 생성 요청.
+def requestCreateFolder(userId, userToken, newFolderName):
+	print(userId)
+	print(userToken)
+	print(newFolderName)
+	if not os.path.exists("/home/gxicxigouxa/myproject/users/" + userId + "/" +  newFolderName):
+		os.mkdir("/home/gxicxigouxa/myproject/users/" + userId + "/" + newFolderName)
+		os.mkdir("/home/gxicxigouxa/myproject/users/" + userId + "/" + newFolderName + "/presentation")
+		print("/home/gxicxigouxa/myproject/users/" + userId + "/" + newFolderName + "success")
+		###########################################
+		headers = {'x-auth-token':userToken}
+		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/", headers=headers)
+		print(res)
+		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/presentation/", headers=headers)  
+		print(res)
+		return "OK"
+	return "Fail"
+@app.route('/requestcreatefolder', methods = ['POST'])
+def requestcreatefolder():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentNewFolderName = data["currentNewFolderName"]
+		return jsonify(requestCreateFolder(currentUserId, currentUserToken, currentNewFolderName))
+
 @app.route('/textcompare',methods=['POST'])#post with javascript code!!!
 #파일을 받아 각 폴더 내부에 있는 파일의 유사도를 분석하여 해당 파일과 가장 알맞는 폴더를 찾아 이동시킨다.
 #분류 대상은 텍스트(.txt), MS word(.docx), MS powerpoint(.pptx)이며, 이외에는 분류하지 않고 현재 디렉토리에 저장.
 def textcompare():
-   if request.method =='POST':
-      path_dir = TXT_DIRECTORY
-      dir_list=[]
-      filenames= []
-      filename=''
-      upload_contents=''
-      file = request.files['file']
-      if file and allowed_file(file.filename):
-         
+	if request.method =='POST':
+		print("ok1")
+		#request로 ID 받아서 pathdir을 /home/gxicxigouxa/user/(숨긴 사용자 ID)/textcompare로 바꾼다.
+		#그리고 오픈스택에도 분류된 상태로 올린다.
+		
+		dir_list=[]
+		filenames= []
+		filename=''
+		upload_contents=''
+		print(request)
+		'''
+		uploaded_files = request.files.getlist('file[]')
+		currentUserId = request.form["userId"]
+		print(currentUserId)
+		'''
 
-         filename = file.filename
-         print("filename: " + filename)
-         filenames.append(filename)
-         file.save(os.path.join(app.config['TXT_DIRECTORY'],filename))
-   
+		uploaded_files = list(request.files.values())
+		print("request.form['currentUserId']")
+		print(request.form["currentUserId"])
+		currentUserId = request.form["currentUserId"]
+		print("UserId: " + currentUserId)
+		print("request.files: ")
+		print(request.files)
+		print("uploaded_files: ")
+		print (uploaded_files)
+		#path_dir = TXT_DIRECTORY
+		path_dir = '/home/gxicxigouxa/myproject/users/' + currentUserId + '/textcompare'
+		
+		print("path_dir: " + path_dir)
+		
+		for file in uploaded_files:		
+			if file and allowed_file(file.filename):
+				
 
-         ext = filename.split('.')
-         #뭔가 divedebyzero error 발생... 그런데 일단은 분류 자체는 잘 되는것 같다.
-         if ext[-1]=='txt':
-            f= open(path_dir+'/'+filename,'r')
-            upload_contents=f.read()
-            f.close()
-         elif ext[-1]=='docx':
-            docx_content = docx2txt.process(path_dir+'/'+filename)
-            upload_contents=docx_content
-         elif ext[-1]=='pptx':
-            prs =Presentation(path_dir+'/'+filename)
-            for slide in prs.slides:
-               for shape in slide.shapes:
-                  if not shape.has_text_frame:
-                     continue
-                  for paragraph in shape.text_frame.paragraphs:
-                     for run in paragraph.runs:
-                        upload_contents+=run.text+ ' '
-         else :
-            return "no available file extension"+ '  '+str(ext[-1])
+				filename = file.filename
+				filenames.append(filename)
+				file.save(os.path.join(path_dir, filename))
+		
 
-      else:
-         return "not allowed ext"
-      
-      ###--------------------------parsing only directory (not file)-----------------------------------------
-      for file in os.listdir(path_dir):
-         if os.path.isdir(path_dir+'/'+file):
-            dir_list.append(path_dir+'/'+file)
+				ext = filename.split('.')
+				
+				if ext[-1]=='txt':
+					f= open(path_dir+'/'+filename,'r')
+					upload_contents=f.read()
+					f.close()
+				elif ext[-1]=='docx':
+					docx_content = docx2txt.process(path_dir+'/'+filename)
+					upload_contents=docx_content
+				elif  ext[-1]=='pptx':
+					prs =Presentation(path_dir+'/'+filename)
+					for slide in prs.slides:
+						for shape in slide.shapes:
+							if not shape.has_text_frame:
+								continue
+							for paragraph in shape.text_frame.paragraphs:
+								for run in paragraph.runs:
+									upload_contents+=run.text+ ' '
+				else :
+					return "no available file extension"+ '  '+str(ext[-1])
 
-      dir_list.sort()
-      ###--------------------------parsing only directory (not file)-------------------------------------------
-      
-      
-      total_score=[]
-      total_content=[]
-      #same index with dir_list
-      
+			else:
+				return "not allowed ext"
+			
+			###--------------------------parsing only directory (not file)-----------------------------------------
+			for file in os.listdir(path_dir):
+				if os.path.isdir(path_dir+'/'+file):
+					dir_list.append(path_dir+'/'+file)
 
-
-      #vectorizer = CountVectorizer(min_df=1)
-      vectorizer=StemmedCountVectorizer(min_df=1,max_df=0.9, stop_words='english')
-      #parsing the all content in the test file not in the presentation file  pptxfile is in the another paht (ex > not /test1   /test1/presentation)
-      for i in range(len(dir_list)):
-         for file in os.listdir(dir_list[i]):
-            
-            
-            if os.path.isfile(dir_list[i]+'/'+file):   # if it is file 
-               ext =file.split('.')
-               if ext[1]=='txt':
-                  f= open(dir_list[i]+'/'+file)
-                  total_content.append(f.read())
-               if ext[1]=='docx':
-                  total_content.append(docx2txt.process(dir_list[i]+'/'+file))
-               '''
-               if ext[1]=='pptx':
-                  prs =Presentation(dir_list[i]+'/'+file)
-                  content=''
-                  for slide in prs.slides:
-                     for shape in slide.shapes:
-                        if not shape.has_text_frame:
-                           continue
-                        for paragraph in shape.text_frame.paragraphs:
-                           for run in paragraph.runs:
-                              content+=run.text+ ' '
-
-                  total_content.append(content)         
-               '''
+			dir_list.sort()
+			###--------------------------parsing only directory (not file)-------------------------------------------
+			
+			
+			total_score=[]
+			total_content=[]
+			#same index with dir_list
+			
 
 
-            else:# if it is directory
-               continue         
-      #parsing the all content
-
-                                                      
-      for i in range(len(total_content)):
-         X_train=vectorizer.fit_transform(total_content)
-         num_samples,num_features=X_train.shape
-         new_post=upload_contents
-         new_post_vec = vectorizer.transform([new_post])
-
-      best_doc = None
-      best_dist = sys.maxsize
-      best_i=None
-      for i,post in enumerate(total_content):
-         #if post == new_post:
-         #   continue
-
-         post_vec = X_train.getrow(i)
-         d=dist_norm(post_vec,new_post_vec)
-         total_score.append(d)
-         if d<best_dist:
-            best_dist=d
-            best_i=i
-
-      dir_file_num=[]
-      # directory's number of files!
-      '''
-      def num_only_file(pwd):
-      numOfFile=0
-      filenames = os.listdir(pwd)
-      for filename in filenames:
-      if (os.path.isfile(pwd)):
-         numOfFile+=1;
-
-      return numOfFile   
-
-      '''
-      
-      for i in range(len(dir_list)):
-         dir_file_num.append(num_only_file(dir_list[i]))#do not count the  directory , just file count(because of presentation)
+			#vectorizer = CountVectorizer(min_df=1)
+			vectorizer=StemmedCountVectorizer(min_df=1,max_df=0.9, stop_words=mystopword)
+			#parsing the all content in the test file not in the presentation file  pptxfile is in the another paht (ex > not /test1   /test1/presentation)
+			for i in range(len(dir_list)):
+				for file in os.listdir(dir_list[i]):
+					
+					
+					if os.path.isfile(dir_list[i]+'/'+file):	# if it is file 
+						ext =file.split('.')
+						if ext[-1]=='txt':
+							f= open(dir_list[i]+'/'+file)
+							total_content.append(f.read())
+						if ext[-1]=='docx':
+							total_content.append(docx2txt.process(dir_list[i]+'/'+file))
 
 
-      sum =0
-      #find the file's closest directory location
-      for i in range(len(dir_file_num)):
-         sum+=dir_file_num[i] 
-         if(sum>=best_i+1):
-            closest_location=i
-            break            
-      
-      '''
-      def find_file_location(sum,dirFileListArr,num_directory,closest_index):
-         for i in range(num_directory):
-            sum+=dirFileListArr[i]
-            if(sum>=closest_index+1):
-               return i
+					else:# if it is directory
+						continue			
+			#parsing the all content
 
-      '''
-      #file_location = find_file_location(sum,dir_file_num,len(dir_file_num),best_i)
+			                                                
+			for i in range(len(total_content)):
+				X_train=vectorizer.fit_transform(total_content)
+				num_samples,num_features=X_train.shape
+				new_post=upload_contents
+				new_post_vec = vectorizer.transform([new_post])
 
-      #######################
+			best_doc = None
+			best_dist = sys.maxsize
+			best_i=None
+			for i,post in enumerate(total_content):
+				#if post == new_post:
+				#	continue
 
-      most= dir_list[closest_location]
+				post_vec = X_train.getrow(i)
+				d=dist_norm(post_vec,new_post_vec)
+				total_score.append(d)
+				if d<best_dist:
+					best_dist=d
+					best_i=i
 
-      
-      if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation
-         shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
-      else:
-         shutil.move(path_dir+'/'+filename,most+"/"+filename)
-   
-      #return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)      
+			dir_file_num=[]
+			# directory's number of files!
 
-      
+			for i in range(len(dir_list)):
+				dir_file_num.append(num_only_file(dir_list[i]))#do not count the  directory , just file count(because of presentation)
 
-      #after this code ----------------- front section modified code
-   textdir_list=[]
-   textdir_list = os.listdir("/home/gxicxigouxa/myproject/textcompare")
 
-   return render_template('txt.html',textdir_list=textdir_list)
+			sum =0
+			#find the file's closest directory location
+			for i in range(len(dir_file_num)):
+				sum+=dir_file_num[i] 
+				if(sum>=best_i+1):
+					closest_location=i
+					break				
+			
 
-   
-   return("Method is not post")
+			most= dir_list[closest_location]
+
+			
+			if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation
+				shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+			else:
+				shutil.move(path_dir+'/'+filename,most+"/"+filename)
+		
+			#return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)		
+
+		
+
+		#after this code ----------------- front section modified code
+	textdir_list=[]
+	textdir_list = os.listdir(path_dir)
+
+	return "ok"
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

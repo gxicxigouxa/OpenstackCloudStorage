@@ -1,4 +1,4 @@
-<md-dialog aria-label="autoClassifiedListDialogContent" class="auto-classified-list-content-container">
+<md-dialog aria-label="autoClassifiedListDialogContent" class="folder-content-container">
     <div class="md-toolbar-tools">
         <h2>경로:
             <span ng-bind="currentPath"></span>
@@ -19,9 +19,9 @@
                 <form name="actFrm">
                     <div id="container-path-button-div" layout="row" ng-hide="!isPathContainer()">
                         <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
-                        <input id="fileClassificationButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChangedByClassificationButton(this)" aria-label="fileInput" name="upFile"></input>
+                        <input id="fileClassificationButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChangedByClassificationButton(this)" aria-label="fileInput" name="file[]" multiple></input>
                         <label for="fileClassificationButton" class="md-button md-raised">파일 분류</label>
-                        <md-button class="md-raised" ng-click="createNewFolder()">새 폴더</md-button>
+                        <md-button class="md-raised" ng-click="showCreateNewFolderForm()">새 폴더</md-button>
                     </div>
                     <div id="inner-path-button-div" layout="row" ng-hide="isPathContainer()">
                         <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
@@ -29,6 +29,20 @@
                         <input id="fileUploadButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChangedByUploadButton(this)" aria-label="fileInput" name="upFile"></input>
                         <label for="fileUploadButton" class="md-button md-raised">업로드</label>
                     </div>
+                </form>
+                <div>
+                    <form id="distri_Frm" name="distri_Frm" action="/textcompare" method="post" enctype="multipart/form-data">
+                        <input multiple="" type="file" name="file[]" />
+                        <input type="hidden" name="userId" value="" id="userId">
+                        <input type="button" onclick="document.getElementById('userId').value = 'currentUserId';document.forms['distri_Frm'].submit();"/>
+                    </form>
+                </div>
+                <form id="create-new-forlder-form" ng-hide="!isClickedNewFolderButton" layout="row">
+                    <md-input-container class="md-block" flax-gt-xs>
+                        <label>새 폴더명</label>
+                        <input ng-model="newFolderName">
+                    </md-input-container>
+                    <md-button class="md-raised" ng-click="createNewFolder()">생성</md-button>
                 </form>
             </div>
             <div class="auto_classified_list_dialog-waiting-signal" layout="row" ng-hide="!isWaitingStatus">

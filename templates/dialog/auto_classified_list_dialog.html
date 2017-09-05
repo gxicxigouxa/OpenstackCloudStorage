@@ -30,13 +30,6 @@
                         <label for="fileUploadButton" class="md-button md-raised">업로드</label>
                     </div>
                 </form>
-                <div>
-                    <form id="distri_Frm" name="distri_Frm" action="/textcompare" method="post" enctype="multipart/form-data">
-                        <input multiple="" type="file" name="file[]" />
-                        <input type="hidden" name="userId" value="" id="userId">
-                        <input type="button" onclick="document.getElementById('userId').value = 'currentUserId';document.forms['distri_Frm'].submit();"/>
-                    </form>
-                </div>
                 <form id="create-new-forlder-form" ng-hide="!isClickedNewFolderButton" layout="row">
                     <md-input-container class="md-block" flax-gt-xs>
                         <label>새 폴더명</label>

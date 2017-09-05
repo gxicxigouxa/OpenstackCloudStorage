@@ -1259,12 +1259,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             }
         };
 
-        function passId(){
-            console.log("asdfasdfasdfasdf");
-            document.getElementById("userId").value = currentUserId;
-            document.forms['distri_Frm'].submit();
-        }
-
         $scope.fileChangedByClassificationButton = function(element) {
             $scope.isAutoClassification = true;
             $scope.fileChanged(element);

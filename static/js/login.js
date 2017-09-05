@@ -54,31 +54,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
                 return null;
             }
         };
-
-        /*
-                $scope.getAdminTokenDirect = function() {
-                    console.log("관리자 토큰 직접 요청 시작");
-                    $http({
-                        method: "POST",
-                        url: "http://183.103.47.19:5000/v2.0/tokens",
-                        headers: {
-                            "content-type": "application/json"
-                        },
-                        data: {
-                            "auth": { "tenantName": "admin", "passwordCredentials": { "username": "admin", "password": "openstack" } }
-                        }
-                    }).then(function successCallback(response) {
-                        console.log("success: ");
-                        console.log(response);
-                    }, function errorCallback(response) {
-                        console.log("error: ");
-                        console.log(response);
-                    });
-                    console.log("관리자 토큰 직접 요청 끝");
-                };
-
-                $scope.getAdminTokenDirect();
-        */
+        
         //매개 변수로 전달받은 제목과 내용을 이용해 Material 디자인의 경고 다이얼로그 출력.
         $scope.showAlertDialog = function(title, data) {
             $scope.showDialog = function() {
@@ -237,7 +213,41 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         function paymentDialogController($scope) {
             $scope.paymentUserId = "";
             $scope.paymentUserPassword = "";
-            
+            $scope.paymentMonth;
+            $scope.showAlertDialog = function(title, data) {
+                $scope.showDialog = function() {
+                    $mdDialog.show(
+                        $mdDialog.alert()
+                        .parent(angular.element(document.body))
+                        .clickOutsideToClose(true)
+                        .title(title)
+                        .textContent(data)
+                        .ariaLabel('alertDialog')
+                        .ok('확인')
+                    );
+                };
+                $scope.showDialog();
+            };
+            $scope.clickOkButton = function() {
+                $http({
+                    method: "POST",
+                    url: "/requestpayment",
+                    data: {
+                        "currentUserId": $scope.paymentUserId,
+                        "currentUserPassword": $scope.paymentUserPassword,
+                        "currentPaymentMonth": $scope.paymentMonth
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    $scope.showAlertDialog("결제 완료", "성공적으로 결제하였습니다.");
+                    //$scope.$apply;
+                }, function errorCallback(response) {
+                    console.log("error: " + response);
+                    $scope.showAlertDialog("결제 실패", "결제에 실패하였습니다.");
+                });
+            };
             
             //dialog 닫기.
             $scope.hide = function() {

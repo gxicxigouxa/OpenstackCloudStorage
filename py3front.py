@@ -588,8 +588,6 @@ def createcontainer():
 
 #폴더 내 파일 리스트 요청.
 def requestFileList(userId, userToken, folderPath):
-	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
-	#지금 메인에서 보이는 컨테이너의 내용은 잘 보이는데 컨테이너의 폴더에 들어가면 잘 안된다.
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url+'/'+ folderPath,headers=headers)
@@ -634,8 +632,6 @@ def requestfilelist():
 		'''
 
 def requestInnerFileList(userId, userToken, folderPath):
-	#TODO. 아직 내가 잘 몰라서 그런지 여기서 뭔가 잘 안되는 것 같다...
-	#지금 메인에서 보이는 컨테이너의 내용은 잘 보이는데 컨테이너의 폴더에 들어가면 잘 안된다.
 	containerName = folderPath[:folderPath.find('/')]
 	url = 'http://183.103.47.19:8080/v1/AUTH_' + userId + '/' + containerName + '?prefix=' + folderPath[folderPath.find('/') + 1:] + '/&delimiter=/'
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
@@ -650,14 +646,17 @@ def requestInnerFileList(userId, userToken, folderPath):
 	parsedFileSet = set()
 	print("rawPathList: ")
 	print (rawPathList)
-	print( folderPath[folderPath.find('/') + 1:])
+	print("previousPath: " + folderPath[folderPath.find('/') + 1:])
 	cur_folderpath=folderPath[folderPath.find('/') + 1:]+'/'
+	print("cur_folderpath: " + cur_folderpath)
 	for rawPath in rawPathList:
 		print(rawPath)
 		strarray = rawPath.split(cur_folderpath)
 		if len(strarray) >= 2:
 			cuttedPathList.append(strarray[1])
 	print("cutted List: ")
+	print(cuttedPathList)
+	print("cuttedPathList[1:]: ")
 	print(cuttedPathList[1:])
 	for currentPath in cuttedPathList[1:]:
 		if currentPath.find('/') is not -1:
@@ -687,7 +686,7 @@ def requestinnerfilelist():
 		print("currentFolderPath: " + currentFolderPath)
 		return jsonify(requestInnerFileList(currentUserId, currentUserToken, currentFolderPath))	
 
-#TODO. 파일 업로드 요청.
+#파일 업로드 요청.
 def requestFileUpload(userId, userToken, folderPath, toUploadFile):
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	fileName = toUploadFile.filename
@@ -761,7 +760,7 @@ def requestfiledownload():
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
-#TODO. 파일 삭제 요청.
+#파일 삭제 요청.
 def requestFileDelete(userId, userToken, folderPath, fileName):
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
@@ -781,7 +780,7 @@ def requestfiledelete():
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDelete(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
-#TODO. 폴더 생성 요청.
+#폴더 생성 요청.
 def requestCreateFolder(userId, userToken, newFolderName):
 	print(userId)
 	print(userToken)
@@ -807,6 +806,22 @@ def requestcreatefolder():
 		currentNewFolderName = data["currentNewFolderName"]
 		return jsonify(requestCreateFolder(currentUserId, currentUserToken, currentNewFolderName))
 
+#결제 요청.
+def requestPayment(userId, userPassword, paymentDay):
+	print(userId)
+	print(userPassword)
+	print(paymentDay)
+	#TODO.
+	return "TODO."
+@app.route('/requestpayment', methods = ['POST'])
+def requestpayment():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserPassword = data["currentUserPassword"]
+		currentPaymentDay = data["currentPaymentDay"]
+		return jsonify(requestPayment(currentUserId, currentUserPassword, currentPaymentDay))
+
 @app.route('/textcompare',methods=['POST'])#post with javascript code!!!
 #파일을 받아 각 폴더 내부에 있는 파일의 유사도를 분석하여 해당 파일과 가장 알맞는 폴더를 찾아 이동시킨다.
 #분류 대상은 텍스트(.txt), MS word(.docx), MS powerpoint(.pptx)이며, 이외에는 분류하지 않고 현재 디렉토리에 저장.
@@ -831,6 +846,7 @@ def textcompare():
 		print("request.form['currentUserId']")
 		print(request.form["currentUserId"])
 		currentUserId = request.form["currentUserId"]
+		currentUserToken = request.form["currentUserToken"]
 		print("UserId: " + currentUserId)
 		print("request.files: ")
 		print(request.files)
@@ -894,8 +910,7 @@ def textcompare():
 			#parsing the all content in the test file not in the presentation file  pptxfile is in the another paht (ex > not /test1   /test1/presentation)
 			for i in range(len(dir_list)):
 				for file in os.listdir(dir_list[i]):
-					
-					
+				
 					if os.path.isfile(dir_list[i]+'/'+file):	# if it is file 
 						ext =file.split('.')
 						if ext[-1]=='txt':
@@ -903,7 +918,6 @@ def textcompare():
 							total_content.append(f.read())
 						if ext[-1]=='docx':
 							total_content.append(docx2txt.process(dir_list[i]+'/'+file))
-
 
 					else:# if it is directory
 						continue			
@@ -951,8 +965,29 @@ def textcompare():
 			
 			if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation
 				shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+				cuttedMost = most.split("/home/gxicxigouxa/myproject/users/" + currentUserId + "/presentation/")
+				cuttedMost[1]
+				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + cuttedMost[1]
+				print(url)
+				print("file name: " + filename)
+				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+				response = requests.put(url + '/' + filename, file, headers=headers)
+				print(url + '/' + filename)
+				print(response.text)
+				return response.text
 			else:
 				shutil.move(path_dir+'/'+filename,most+"/"+filename)
+				print("most: " + most)
+				cuttedMost = most.split("/home/gxicxigouxa/myproject/users/" + currentUserId + "/")
+				cuttedMost[1]
+				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + cuttedMost[1]
+				print(url)
+				print("file name: " + filename)
+				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+				response = requests.put(url + '/' + filename, file, headers=headers)
+				print(url + '/' + filename)
+				print(response.text)
+				return response.text
 		
 			#return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)		
 

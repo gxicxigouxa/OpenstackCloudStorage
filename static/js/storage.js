@@ -1145,6 +1145,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             //선택된 파일의 갯수.
             var numberOfSelectedFiles = selectedFiles.length;
             //파일의 갯수만큼 출력할 grid의 형식에 맞게 데이터 추가하고 업로드할 파일에 추가.
+            /*
             for (var i = 0; i < numberOfSelectedFiles; ++i) {
                 var currentFileInfo = {
                     format: getFileType(selectedFiles[i].name),
@@ -1154,6 +1155,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 };
                 $scope.existFilesGridData.data.push(currentFileInfo);
             }
+            */
             //grid 갱신.
             $scope.$apply();
             $scope.uploadSelectedFiles();
@@ -1162,38 +1164,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         //업로드하고자 하는 파일을 실제로 서버에 저장하기 위한 함수.
         //$scope.fileChanged(element) 내에서 호출.
         $scope.uploadSelectedFiles = function() {
-            /*
-            var obj;
-            var fileName;
-            var extName;
-            // 파일을 업로드 한다.
-            var uploadFile = document.getElementById("fileInputButton")
-            obj = document.actFrm.upFile;
-            if (obj.value != "") {
-                var pathHeader = obj.value.lastIndexOf("\\");
-                var pathMiddle = obj.value.lastIndexOf(".");
-                var pathEnd = obj.value.length;
-                fileName = obj.value.substring(pathHeader + 1, pathMiddle);
-                extName = obj.value.substring(pathMiddle + 1, pathEnd);
-            }
-            var xhr = new XMLHttpRequest(); //파일을 업로드 하기 위한 객체
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4 && xhr.status == 200) { //4:complete state 200 : 이상없음
-                }
-            };
-
-            //맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
-            xhr.open("PUT", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + fileName + "." + extName), true);
-            xhr.setRequestHeader("X-File-Name", encodeURIComponent(uploadFile.files[0].name));
-            //토큰 갱신될때마다 계속 바꿔주기 
-            xhr.setRequestHeader("x-auth-token", getTokenFromSession());
-            xhr.setRequestHeader("content-type", "text/html");
-            xhr.setRequestHeader("cache-control", "no-cache");
-            xhr.send(uploadFile.files[0]);
-            $scope.$apply();
-            $scope.showUploadCompletedToast();
-            */
-            //TODO.
             
             var obj;
             var fileName;
@@ -1294,6 +1264,31 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("error: " + response);
             });
             $scope.isClickedNewFolderButton = false;
+        };
+
+        //파일 grid에서 삭제하고자 하는 파일을 실제 서버에서 제거하기 위한 함수.
+        $scope.deleteFile = function() {
+            console.log("파일 삭제 요청 시작");
+            $http({
+                method: "POST",
+                url: "/requestfiledelete",
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "currentFolderPath": $scope.currentPath,
+                    "currentFileName": $scope.selectedExistFile[0].name
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
+                    $scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
+                });
+                $scope.gridApi2.selection.clearSelectedRows();
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("삭제 요청 끝");
         };
 
         //파일 grid에 대해 선택된 열이 없는지를 판단.        

@@ -15,20 +15,20 @@
             <div class="payment_dialog-container" layout-gt-xs="column">
                 <md-input-container class="md-block" flax-gt-xs>
                     <label>ID</label>
-                    <input ng-model="paymentUserId">
+                    <input ng-model="paymentUserId" required>
                 </md-input-container>
                 <md-input-container class="md-block" flax-gt-xs>
                     <label>비밀번호</label>
-                    <input ng-model="paymentUserPassword">
+                    <input ng-model="paymentUserPassword" type="password" required>
                 </md-input-container>
             </div>
             <div id="payment_dialog-month-select-radio-button">
                 <p>스토리지 사용 기간 선택</p>
-                <md-radio-group ng-model="paymentMonth">
-                    <md-radio-button value="1">1개월</md-radio-button>
-                    <md-radio-button value="3">3개월</md-radio-button>
-                    <md-radio-button value="6">6개월</md-radio-button>
-                    <md-radio-button value="12">12개월</md-radio-button>
+                <md-radio-group ng-model="paymentDay">
+                    <md-radio-button value="30">30일</md-radio-button>
+                    <md-radio-button value="60">60일</md-radio-button>
+                    <md-radio-button value="90">90일</md-radio-button>
+                    <md-radio-button value="120">120일</md-radio-button>
                 </md-radio-group>
             </div>
             <div class="payment_dialog-button">

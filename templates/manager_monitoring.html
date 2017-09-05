@@ -24,7 +24,10 @@
                     <md-button class="md-warn" ng-disabled="!isSelectedOnlyOneUser()" ng-click="showToggleUserPermissionDialog()">권한 변경</md-button>
                     <md-button ng-click="refreshGrid()">갱신</md-button>
                 </md-tab>
-                <md-tab label="예상 매출액">
+                <md-tab label="예상 매출액" ng-click="showChart()">
+                    <div id="chart-container">
+                        <div id="container" style="min-width: 400px; height: 500px; margin: 0 auto"></div>
+                    </div>
                     <div id="expected-sales-div">
                         <p>예상 매출액: <span ng-bind="expectedSales"></span></p>
                     </div>
@@ -42,6 +45,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
     <script src="http://ui-grid.info/docs/grunt-scripts/csv.js"></script>
     <script src="http://ui-grid.info/docs/grunt-scripts/pdfmake.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="http://ui-grid.info/docs/grunt-scripts/vfs_fonts.js"></script>
     <script src="http://ui-grid.info/release/ui-grid.js"></script>
     <script type="text/javascript">
@@ -124,6 +129,8 @@
                 "mem_permission": "user"
             }));
         };
+        
+
         //AngularJS를 이용해 HTML을 제어하기 위한 모듈.
         //매개 변수로 관리자 모니터링에 대한 애플리케이션과 사용할 외부 모듈로 이루어진 배열을 전달.
         //ngMaterial: Material 디자인에 관한 모듈.
@@ -206,6 +213,44 @@
                     }
                 };
 
+                $scope.showChart = function() {
+                    test_list=[1,2,1,10,1,1,1,1,1];
+                    Highcharts.chart('container', {
+                        chart: {
+                            type: 'line'
+                        },
+                        title: {
+                            text: 'Monthly Average Temperature'
+                        },
+                        subtitle: {
+                            text: 'Source: WorldClimate.com'
+                        },
+                        xAxis: {
+                            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Temperature (°C)'
+                            }
+                        },
+                        plotOptions: {
+                            line: {
+                                dataLabels: {
+                                    enabled: true
+                                },
+                                enableMouseTracking: false
+                            }
+                        },
+                        series: [{
+                            name: 'Tokyo',
+                            data: test_list
+                        }, {
+                            name: 'London',
+                            data: test_list
+                        }]
+                    });
+                };
+
                 $scope.selectedUsers = [];
                 //회원 grid에 대해 한 개의 열만 선택되었는지를 판단.
                 $scope.isSelectedOnlyOneUser = function() {
@@ -267,7 +312,7 @@
                     var receivedUserGridData = JSON.parse(jsontext);
                     $scope.userGridData.data = receivedUserGridData;
                 };
-
+                /*
                 xhr1.send();
                 //여러 데이터 선택 가능.
                 $scope.userGridData.multiSelect = true;
@@ -344,6 +389,7 @@
                         });
                     }
                 };
+                */
 
                 //페이지 초기화 함수.
                 $scope.refreshGrid = function() {

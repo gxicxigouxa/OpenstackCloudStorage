@@ -182,6 +182,10 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
                 sessionStorage.removeItem("currentUserPassword");
             } else if (err_code == "success") {
                 $scope.showAlertDialog("로그인 성공", "로그인에 성공하였습니다.");
+            } else if (err_code == "expired") {
+                $scope.showAlertDialog("로그인 실패", "사용 기간이 만료되었습니다.");
+                sessionStorage.removeItem("currentUserId");
+                sessionStorage.removeItem("currentUserPassword");
             }
             setLoginErrCode("none");
         }
@@ -213,7 +217,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
         function paymentDialogController($scope) {
             $scope.paymentUserId = "";
             $scope.paymentUserPassword = "";
-            $scope.paymentMonth;
+            $scope.paymentDay;
             $scope.showAlertDialog = function(title, data) {
                 $scope.showDialog = function() {
                     $mdDialog.show(
@@ -235,7 +239,7 @@ var app = angular.module('oldLoginApp', ['ngMaterial'])
                     data: {
                         "currentUserId": $scope.paymentUserId,
                         "currentUserPassword": $scope.paymentUserPassword,
-                        "currentPaymentMonth": $scope.paymentMonth
+                        "currentPaymentDay": $scope.paymentDay
                     }
                 }).then(function successCallback(response) {
                     console.log("success: ");

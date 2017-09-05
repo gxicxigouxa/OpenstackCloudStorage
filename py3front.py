@@ -51,6 +51,7 @@ import docx2txt
 from pptx import Presentation
 import requests
 from time import sleep
+import datetime
 #-*- coding: utf-8 -*-
 
 mystopword = frozenset([
@@ -172,7 +173,9 @@ def chklogin():
 	if request.method == "POST":
 		userId= request.form['id']
 		userPwd= request.form['password']
-		
+		current_time = datetime.datetime.now()
+		print(current_time)
+
 		print (userId)
 		conn =mysql.connect()
 		cursor =conn.cursor()
@@ -193,10 +196,11 @@ def chklogin():
 		if (str(result)=='[]'): # When there is no user id in db
 			return render_template('oldlogin.html',login_err_code ="id incorrect", sign_up_err_code = "none")
 		else:
+			convertedDatetime = datetime.datetime.strptime(result[0]["expiretime"], '%Y-%m-%d %H:%M:%S')
 			if result[0]["id"] == "admin":
 				print("rendering manager monitoring page...")
 				return redirect("/monitoring")
-			elif(result[0]["pwd"]==userPwd):#pwd is correct
+			elif(result[0]["pwd"]==userPwd and (convertedDatetime > current_time)):#pwd is correct
 				#토큰 가져오기
 				print("after compare")		
 				token_url = 'http://183.103.47.19:5000/v2.0/tokens'
@@ -217,6 +221,8 @@ def chklogin():
 				session["userId"] = userId
 				'''
 				return redirect("/storage")
+			elif (result[0]["pwd"]==userPwd and convertedDatetime < current_time):
+				return render_template('oldlogin.html', login_err_code="expired", sign_up_err_code = "none")
 			else:#pwd is incorrect
 				return render_template('oldlogin.html', login_err_code="pwd incorrect", sign_up_err_code = "none")
 
@@ -228,8 +234,14 @@ def chksignup():
 		signUpPwd= request.form['user-password']
 		signUpBirthday = request.form['user-birthday']
 		signUpEmail = request.form['user-email']
-		
+		paymentDay = 30
+		#expiretime = datetime.datetime.now()
+		expiretime = datetime.datetime.now() + datetime.timedelta(days=paymentDay)
 		print (signUpId)
+		rating = 0
+		totalamount = 0
+		enrollmentnumber = 0
+		yearaverageamount = 0
 		conn =mysql.connect()
 		cursor =conn.cursor()
 		query = "select * from userinfotable where id ='"+signUpId +"';"
@@ -247,7 +259,8 @@ def chksignup():
 		print (str(result))
 
 		if (str(result)=='[]'): # When there is no user id in db
-			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "', '" + signUpEmail + "');"
+			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "', '" + signUpEmail + "', " + str(paymentDay) + ", '" + expiretime.strftime('%Y-%m-%d %H:%M:%S') +"' , " + str(rating) + ", " + str(totalamount) + ", " + str(enrollmentnumber) + ", " + str(yearaverageamount) + ");"
+			print(query)
 			cursor.execute(query)
 			conn.commit()
 
@@ -808,9 +821,56 @@ def requestcreatefolder():
 
 #결제 요청.
 def requestPayment(userId, userPassword, paymentDay):
+	
+	if paymentDay == '30':
+		payment = 10000
+	elif paymentDay == '60':
+		payment = 19000
+	elif paymentDay == '90':
+		payment = 28000
+	elif paymentDay == '120':
+		payment = 37000
+
 	print(userId)
 	print(userPassword)
 	print(paymentDay)
+	conn =mysql.connect()
+	cursor =conn.cursor()
+	query = "select * from userinfotable where id ='"+ userId +"';"
+	cursor.execute(query)
+	conn.commit()
+	result =[]
+	columns= tuple( [d[0] for d in cursor.description] )
+
+	
+	for row in cursor:
+		result.append(dict(zip(columns, row)))
+
+	print (str(result))
+	if (str(result)=='[]'): # When there is no user id in db
+		return "not ok" # oldlogin.html대신 
+	else:	
+		if(result[0]["pwd"]==userPassword):#pwd is correct
+			storedPaymentDay = int(result[0]["paymentday"])
+			if (storedPaymentDay < 200):
+				rating = 0
+			elif (storedPaymentDay >= 200 and storedPaymentDay < 500):
+				rating = 1
+			elif (storedPaymentDay >= 500 and storedPaymentDay < 1000):
+				rating = 2
+			elif (storedPaymentDay >= 1000 and storedPaymentDay < 2000):
+				rating = 3
+			else:
+				rating = 4
+			finalPaymentDay = str(int(result[0]["paymentday"]) + int(paymentDay))
+			convertedDatetime = datetime.datetime.strptime(result[0]["expiretime"], '%Y-%m-%d %H:%M:%S')
+			payment_ExpireTime= convertedDatetime + datetime.timedelta(days = int(paymentDay))
+			#previousEnrollment = result[0]["enrollment"]
+			query = "UPDATE userinfotable SET paymentday=" + finalPaymentDay + ", expiretime='" + payment_ExpireTime.strftime('%Y-%m-%d %H:%M:%S') + "', totalamount=totalamount+" + str(payment) + ", enrollmentnumber=enrollmentnumber + 1, yearaverageamount=365*totalamount/paymentday, rating=" + str(rating) + " WHERE id='" + userId + "';"
+			cursor.execute (query)
+			conn.commit()
+		else:#pwd is incorrect
+			return "not ok"
 	#TODO.
 	return "TODO."
 @app.route('/requestpayment', methods = ['POST'])
@@ -998,5 +1058,190 @@ def textcompare():
 	textdir_list = os.listdir(path_dir)
 
 	return "ok"
+
+'''
+@app.route('/dbincomeexpect')
+def dbincomeexpect():
+	conn = mysql.connect()
+	cursor=conn.cursor()
+	cursor.execute("select * from jhjtable")
+	
+	result =[]
+	columns= tuple( [d[0] for d in cursor.description] )
+
+	
+	for row in cursor:
+		result.append(dict(zip(columns, row)))
+	
+	numOfJson= len(result)
+	id =[]
+	usedmonth=[]
+	grade=[]
+	totalamount=[]
+	numofregist=[]
+	averagefee=[]
+	data= [] 
+	target = []
+	userid =[]
+	xdata = []
+	ytarget=[]
+
+	for i in range(numOfJson):
+		id.append(result[i]["id"])
+		usedmonth.append(result[i]["usedmonth"])
+		grade.append(result[i]["grade"])
+		totalamount.append(result[i]["totalamount"])
+		numofregist.append(result[i]["numofregist"])
+		averagefee.append(result[i]["averagefee"])
+		tmp=str(usedmonth[i])+' '+str(grade[i])+' '+str(totalamount[i])+ ' '+str(numofregist[i])
+		data.append(tmp.split(' '))
+		target.append(averagefee[i])
+		userid.append(id[i])
+		
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	for j in range(numOfJson):
+		xdata.append([float(i) for i in data[j]])
+
+		
+	ytarget =[float(i) for i in target]
+	
+	# like map (int,list)
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	
+	lr = LinearRegression()
+	kf = KFold(len(xdata),n_folds=5)
+	#en = ElasticNet(alpha=0.5,precompute=False)
+
+
+	met = ElasticNetCV(l1_ratio=l1_ratio,n_jobs=-1)
+	y= np.transpose(np.atleast_2d(ytarget))#transpose ydata to two dimentional array
+	
+
+	lr.fit(xdata,y)
+	
+	lrp =lr.predict(xdata)
+	
+	
+
+
+	
+
+	enp = np.zeros_like(y)
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	enpxdata= np.zeros_like(xdata)###important!!!!!!!!!!!!!!!!
+
+
+	for i in range(len(xdata)):
+		enpxdata[i]=xdata[i]
+	#xdata => [[1,2,3],[4.5.6]]  enpxdata=> [[1,2,3] [4,5,6]]           no comma!!!!!	
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	for train,test in kf:
+		met.fit(enpxdata[train],y[train])
+		enpred=np.transpose(np.atleast_2d(en.predict(enpxdata[test])))#it is very important!!!
+		enp[test]=enpred
+	
+	EnLrswap(enp,lrp)#minus element must be swap!
+
+	
+	sum = 0
+	for i in range(len(enp)):
+	
+		sum+=enp[i,0]
+	
+			
+	return str(sum)
+@app.route('/dbincomepersonal')
+def dbincomepersonal():
+	conn = mysql.connect()
+	cursor=conn.cursor()
+	cursor.execute("select * from jhjtable")
+	
+	result =[]
+	columns= tuple( [d[0] for d in cursor.description] )
+
+	
+	for row in cursor:
+		result.append(dict(zip(columns, row)))
+	
+	numOfJson= len(result)
+	id =[]
+	usedmonth=[]
+	grade=[]
+	totalamount=[]
+	numofregist=[]
+	averagefee=[]
+	data= [] 
+	target = []
+	userid =[]
+	xdata = []
+	ytarget=[]
+
+	for i in range(numOfJson):
+		id.append(result[i]["id"])
+		usedmonth.append(result[i]["usedmonth"])
+		grade.append(result[i]["grade"])
+		totalamount.append(result[i]["totalamount"])
+		numofregist.append(result[i]["numofregist"])
+		averagefee.append(result[i]["averagefee"])
+		tmp=str(usedmonth[i])+' '+str(grade[i])+' '+str(totalamount[i])+ ' '+str(numofregist[i])
+		data.append(tmp.split(' '))
+		target.append(averagefee[i])
+		userid.append(id[i])
+		
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	for j in range(numOfJson):
+		xdata.append([float(i) for i in data[j]])
+
+		
+	ytarget =[float(i) for i in target]
+	
+	# like map (int,list)
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	
+	lr = LinearRegression()
+	en = ElasticNet(alpha=0.5,precompute=False)
+
+	
+	
+	y= np.transpose(np.atleast_2d(ytarget))#transpose ydata to two dimentional array
+	
+
+	lr.fit(xdata,y)
+	
+	lrp =lr.predict(xdata)
+	
+	
+
+	kf = KFold(len(xdata),n_folds=5)
+
+	enp = np.zeros_like(y)
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	enpxdata= np.zeros_like(xdata)###important!!!!!!!!!!!!!!!!
+
+
+	for i in range(len(xdata)):
+		enpxdata[i]=xdata[i]
+	#xdata => [[1,2,3],[4.5.6]]  enpxdata=> [[1,2,3] [4,5,6]]           !!!!!<no comma>!!!!!
+	#if I do not this  knn expect didn't operate
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	for train,test in kf:
+		en.fit(enpxdata[train],y[train])
+		enpred=np.transpose(np.atleast_2d(en.predict(enpxdata[test])))#it is very important!!!
+		enp[test]=enpred
+	
+	EnLrswap(enp,lrp)#minus element must be swap!
+
+	
+	showall= ''
+	enpshowall = ""
+	i=0
+	for i in range(len(data)):
+		showall+=str(enp[i,0])+'\n'
+		
+		
+	return str(showall)
+'''
+
+
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)

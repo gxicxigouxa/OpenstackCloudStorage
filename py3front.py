@@ -42,8 +42,9 @@ from werkzeug import secure_filename
 import pefile
 import shutil
 from sklearn.linear_model import ElasticNet
-#from sklearn.cross_validation import KFold
-from sklearn.model_selection import KFold
+from sklearn.linear_model import ElasticNetCV
+from sklearn.cross_validation import KFold
+#from sklearn.model_selection import KFold
 from sklearn.feature_extraction.text import CountVectorizer
 import sys
 import nltk.stem
@@ -144,6 +145,12 @@ def dist_norm(v1,v2):
    v2_normalized = v2/sp.linalg.norm(v2.toarray())
    delta = v1_normalized -v2_normalized
    return sp.linalg.norm(delta.toarray())
+
+def EnLrswap (enprod, lrprod):
+	i = 0
+	for i in range(len(enprod)):
+		if(enprod[i] < 0):
+			enprod[i] = lrprod[i]
 
 def num_only_file(pwd):
    numOfFile=0
@@ -406,51 +413,75 @@ Total_num=0
 
 @app.route('/malwaretest', methods=['POST'])
 def malwarecheck():
-		#files = request.files['file']
-		files = {'file': (request.files['file'].filename, request.files['file'])}
-		print(files)
-		params = {'apikey': API_KEY}
-		#악성 코드 분석 요청
-		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
-		#분석 요청 결과
+	#files = request.files['file']
+	files = {'file': (request.files['file'].filename, request.files['file'])}
+	scan_response = scan_file(API_KEY, files)
+
+	report_response = report_file(API_KEY,scan_response['resource'])
+	print("report_response")
+	print(report_response)
+	if report_response == "lots of requests":
+		print("do it sssssss")
+	
+	print(Total_num)
+	print(detected_cnt)
+	print(detected_cnt / Total_num)
+	
+	if scan_response == "NO Data":
+		print("No data...")
+	else:
+		if detected_cnt / Total_num > 0.1:
+			return "malware detected!"
+		else:
+			#현재 업로드하고자 하는 위치에 업로드한다.
+			return "OK"
+	'''
+	print(files)
+	params = {'apikey': API_KEY}
+	#악성 코드 분석 요청
+	response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
+	#분석 요청 결과
+	json_response = response.json()
+	print(json_response)
+	if json_response['response_code'] != 1:
+		return jsonify({'result':'Scan request fail'})
+	
+	else:
+		#print("Scan request success. Wait for 5 seconds.")
+		#sleep(5)
+		print("Scan request success.")
+		#분석 결과 요청
+		params = {'apikey': API_KEY, 'resource': json_response['resource']}
+		headers = {
+			"Accept-Encoding": "gzip, deflate",
+			"User-Agent" : "gzip,  My Python requests library example client or username"
+		}
+		response = requests.get('https://www.virustotal.com/vtapi/v2/file/report', params=params, headers=headers)
+		#분석 결과 요청에 대한 결과
 		json_response = response.json()
 		print(json_response)
-		if json_response['response_code'] != 1:
-			return jsonify({'result':'Scan request fail'})
-		else:
-			#print("Scan request success. Wait for 5 seconds.")
-			#sleep(5)
-			print("Scan request success.")
-			#분석 결과 요청
-			params = {'apikey': API_KEY, 'resource': json_response['resource']}
-			headers = {
-				"Accept-Encoding": "gzip, deflate",
-				"User-Agent" : "gzip,  My Python requests library example client or username"
-			}
-			response = requests.get('https://www.virustotal.com/vtapi/v2/file/report', params=params, headers=headers)
-			#분석 결과 요청에 대한 결과
-			json_response = response.json()
-			print(json_response)
-			scanResults = list(json_response['scans'].values())
-			print(scanResults)
-			for scanResult in scanResults:
-				print("current result:")
-				print(scanResult)
-				print("current result's detected:")
-				print(scanResult['detected'])
-				if scanResult['detected']:
-					print("Virus detected!")
-					return jsonify({'result':'Virus detected'})
-			print("Virus not detected.")
-			return jsonify({'result':'Virus not detected'})
-
-def scan_file(APIKEY,FilePath):
+		scanResults = list(json_response['scans'].values())
+		print(scanResults)
+		for scanResult in scanResults:
+			print("current result:")
+			print(scanResult)
+			print("current result's detected:")
+			print(scanResult['detected'])
+			if scanResult['detected']:
+				print("Virus detected!")
+				return jsonify({'result':'Virus detected'})
+		print("Virus not detected.us not detected'})
+		'''
+	return "OK"
+detected_cnt=0
+Total_num=0
+def scan_file(APIKEY, files):
 	while(True):
 		params = {'apikey': API_KEY}
-		
-		files = {'file': (FilePath, open(FilePath, 'rb'))}
 		response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
 		scan_response = response.json()
+		print(scan_response)
+		print(scan_response["resource"])
 		if(scan_response['response_code']==1):
 			return scan_response
 		elif(scan_response['response_code']==-2):
@@ -758,20 +789,36 @@ def requestFileDownload(userId, userToken, folderPath, fileName):
 	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
 	response = requests.get(url + '/' + fileName, headers=headers)
 	print(url + '/' + fileName)
+	print("response.text")
 	print(response.text)
 	print("response: ")
 	print(response)
 	#버그 발생. 다운로드할 파일을 어떻게 전달해야할지 모르겠다...
-	return {"response":response}
+	return response
 @app.route('/requestfiledownload', methods = ['POST'])
 def requestfiledownload():
 	if request.method == 'POST':
+		print("request: ")
+		print(request)
+		print("request.data: ")
+		print(request.data)
 		data = request.get_json()
 		currentUserId = data["currentUserId"]
 		currentUserToken = data["currentUserToken"]
 		currentFolderPath = data["currentFolderPath"]
 		currentFileName = data["currentFileName"]
-		return jsonify(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
+		#return send_file(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
+		url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + currentFolderPath
+		print("file name: " + currentFileName)
+		headers  ={'x-auth-token':currentUserToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
+		response = requests.get(url + '/' + currentFileName, headers=headers)
+		print(url + '/' + currentFileName)
+		print("response.text")
+		print(response.text)
+		print("response: ")
+		print(response)
+		#버그 발생. 다운로드할 파일을 어떻게 전달해야할지 모르겠다...
+		return response.text
 
 #파일 삭제 요청.
 def requestFileDelete(userId, userToken, folderPath, fileName):
@@ -1058,6 +1105,101 @@ def textcompare():
 	textdir_list = os.listdir(path_dir)
 
 	return "ok"
+
+@app.route('/dbincomeexpect', methods=['POST', 'GET'])
+def dbincomeexpect():
+	conn = mysql.connect()
+	cursor=conn.cursor()
+	cursor.execute("select * from userinfotable")
+	
+	result =[]
+	columns= tuple( [d[0] for d in cursor.description] )
+
+	
+	for row in cursor:
+		result.append(dict(zip(columns, row)))
+	
+	numOfJson= len(result)
+	numberOfAccount = 0
+	id =[]
+	usedmonth=[]
+	grade=[]
+	totalamount=[]
+	numofregist=[]
+	averagefee=[]
+	data= [] 
+	target = []
+	userid =[]
+	xdata = []
+	ytarget=[]
+
+	for i in range(numOfJson):
+		if result[i]["id"] == "admin":
+			print(result[i]["id"])
+			continue
+		id.append(result[i]["id"])
+		usedmonth.append(result[i]["paymentday"])
+		grade.append(result[i]["rating"])
+		totalamount.append(result[i]["totalamount"])
+		numofregist.append(result[i]["enrollmentnumber"])
+		averagefee.append(result[i]["yearaverageamount"])
+		tmp=str(usedmonth[numberOfAccount])+' '+str(grade[numberOfAccount])+' '+str(totalamount[numberOfAccount])+ ' '+str(numofregist[numberOfAccount])
+		data.append(tmp.split(' '))
+		target.append(averagefee[numberOfAccount])
+		userid.append(id[numberOfAccount])
+		print("OK" + str(i))
+		numberOfAccount += 1
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	for j in range(numberOfAccount):
+		xdata.append([float(i) for i in data[j]])
+
+	print(len(xdata))
+	print(numberOfAccount)
+	ytarget =[float(i) for i in target]
+	
+	# like map (int,list)
+	# ------------------------------------------------array element's string type to float!!!!!!!!!!!!!!------------------------------------------------
+	
+	lr = LinearRegression()
+	en = ElasticNet(alpha=0.5,precompute=False)
+
+	
+	
+	y= np.transpose(np.atleast_2d(ytarget))#transpose ydata to two dimentional array
+	
+
+	lr.fit(xdata,y)
+	
+	lrp =lr.predict(xdata)
+	
+	
+
+	kf = KFold(len(xdata),n_folds=5)
+
+	enp = np.zeros_like(y)
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	enpxdata= np.zeros_like(xdata)###important!!!!!!!!!!!!!!!!
+
+
+	for i in range(len(xdata)):
+		enpxdata[i]=xdata[i]
+	#xdata => [[1,2,3],[4.5.6]]  enpxdata=> [[1,2,3] [4,5,6]]           no comma!!!!!	
+	###---------------------------------important!!!!!!!!!!!!!!!!!!-----------------------------------------
+	for train,test in kf:
+		en.fit(enpxdata[train],y[train])
+		enpred=np.transpose(np.atleast_2d(en.predict(enpxdata[test])))#it is very important!!!
+		enp[test]=enpred
+	
+	EnLrswap(enp,lrp)#minus element must be swap!
+
+	
+	sum = 0
+	personalExpectedIncomeList = []
+	for i in range(len(enp)):
+		sum+=enp[i,0]
+		personalExpectedIncomeList.append(round(enp[i,0],2))
+
+	return jsonify({"data":personalExpectedIncomeList,"id":userid})
 
 '''
 @app.route('/dbincomeexpect')

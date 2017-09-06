@@ -807,6 +807,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             */
             //TODO. 테스트 필요.
             console.log("파일 다운로드 요청 시작");
+            //TODO.
             $http({
                 method: "POST",
                 url: "/requestfiledownload",
@@ -821,7 +822,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("받은 데이터:");
                 console.log(response);
                 var arrayBufferView = new Uint8Array(response);
-                var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                //var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                var blob = new Blob([arrayBufferView], { type: "text/plain" });
                 var urlCreator = window.URL || window.webkitURL;
 
                 if (window.navigator.msSaveOrOpenBlob)

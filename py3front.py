@@ -757,7 +757,7 @@ def requestFileDownload(userId, userToken, folderPath, fileName):
 	print("response: ")
 	print(response)
 	#버그 발생. 다운로드할 파일을 어떻게 전달해야할지 모르겠다...
-	return response
+	return response.text
 @app.route('/requestfiledownload', methods = ['POST'])
 def requestfiledownload():
 	if request.method == 'POST':
@@ -775,11 +775,10 @@ def requestfiledownload():
 		print("file name: " + currentFileName)
 		headers  ={'x-auth-token':currentUserToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
 		response = requests.get(url + '/' + currentFileName, headers=headers)
+		response.encoding = 'utf-8'
 		print(url + '/' + currentFileName)
 		print("response.text")
 		print(response.text)
-		print("response: ")
-		print(response)
 		#버그 발생. 다운로드할 파일을 어떻게 전달해야할지 모르겠다...
 		return response.text
 

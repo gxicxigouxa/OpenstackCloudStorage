@@ -879,6 +879,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             //TODO. 테스트 필요.
             console.log("파일 다운로드 요청 시작");
             //TODO.
+            
             $http({
                 method: "POST",
                 url: "/requestfiledownload",
@@ -887,16 +888,27 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     "currentUserToken": currentUserToken,
                     "currentFolderPath": $scope.currentPath,
                     "currentFileName": $scope.selectedExistFile[0].name
+                },
+                responseType: 'arraybuffer'
+            })
+            /*
+            $http({
+                method: "GET",
+                url: 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + $scope.currentPath + "/" + $scope.selectedExistFile[0].name,
+                headers: {
+                    "x-auth-token": currentUserToken,
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
                 }
-            }).then(function successCallback(response) {
+            })
+            */
+            .then(function successCallback(response) {
                 console.log("success: ");
                 console.log("받은 데이터:");
                 console.log(response);
-                var arrayBufferView = new Uint8Array(response);
-                //var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                var arrayBufferView = new Uint8Array(response.data);
                 var blob = new Blob([arrayBufferView], { type: "text/plain" });
                 var urlCreator = window.URL || window.webkitURL;
-
+                
                 if (window.navigator.msSaveOrOpenBlob)
                     window.navigator.msSaveOrOpenBlob(blob, $scope.selectedExistFile[0].name);
                 else {
@@ -907,6 +919,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     a.click();
                     document.body.removeChild(a);
                 }
+                
             }, function errorCallback(response) {
                 console.log("error: " + response);
             });
@@ -1601,6 +1614,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         if (e.which == 46) {
             if (selectedRow[0].numberOfObject == "0") {
                 angular.forEach(selectedRow, function(data, index) {
+                    /*
                     $scope.gridOptions.data.splice($scope.gridOptions.data.lastIndexOf(data), 1);
                     var xhr = new XMLHttpRequest(); //폴더를 삭제하기 위한 객체
                     //맨마지막에 자신이 업로드할때 올리고자 할 파일 이름 삽입
@@ -1611,7 +1625,9 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     xhr.setRequestHeader("cache-control", "no-cache");
                     xhr.send();
                     selected_length = selectedRow.length;
-
+                    */
+                    $scope.gridOptions.data.splice($scope.gridOptions.data.lastIndexOf(data), 1);
+                    //TODO. 컨테이너 삭제에 대한 동작 구현.
                 });
                 showSnackbar();
                 $scope.gridApi.selection.clearSelectedRows();

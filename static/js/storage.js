@@ -426,7 +426,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.lastSelectedItem;
         $scope.isAutoClassification = false;
         $scope.isDisableMalwareTestButton = false;
-        $scope.malwareTestButtonMessage = "악성코드 검사";
+        $scope.malwareTestButtonMessage = "악성코드 검사 후 업로드";
         var existFiles = [];
         $scope.selectedExistFile = [];
         $scope.existFilesGridData = {
@@ -709,6 +709,12 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("success: ");
                     console.log("받은 데이터:");
                     console.log(response);
+                    $scope.existFilesGridData.data.push({
+                        "name": uploadFile.files[0].name,
+                        "lastUpdate": "만든 날짜(파일)",
+                        "size": "파일의 크기",
+                        "format": "파일"
+                    });
                 }, function errorCallback(response) {
                     console.log("error: ");
                     console.log(response);
@@ -757,14 +763,79 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 console.log("success: ");
                 console.log("받은 데이터:");
                 console.log(response);
-                if (response.data.result == "Scan request fail") {
-                    alert("분석 요청 실패");
-                } else if (response.data.result == "Virus detected") {
-                    alert("악성코드 검출됨");
-                } else if (response.data.result == "Virus not detected") {
-                    alert("악성코드 검출되지 않음");
+                $scope.showAlertDialog = function(title, data) {
+                    $scope.showDialog = function() {
+                        $mdDialog.show(
+                            $mdDialog.alert()
+                            .parent(angular.element(document.body))
+                            .multiple(true)
+                            .clickOutsideToClose(true)
+                            .title(title)
+                            .textContent(data)
+                            .ariaLabel('alertDialog')
+                            .ok('확인')
+                        );
+                    };
+                    $scope.showDialog();
+                };
+                if (response.data == "Scan request fail") {
+                    $scope.showAlertDialog("분석 실패", "분석 요청 실패");
+                } else if (response.data == "Scan data input fail") {
+                    $scope.showAlertDialog("분석 실패", "분석 요청 전송 실패");
+                } else if (response.data == "Lots of requests") {
+                    $scope.showAlertDialog("분석 실패", "과도한 요청으로 인한 실패");
+                } else if (response.data == "Report request fail") {
+                    $scope.showAlertDialog("분석 실패", "분석 결과 요청 실패");
+                } else if (response.data == "Report data input fail"	) {
+                    $scope.showAlertDialog("분석 실패", "분석 결과 전송 실패");
+                } else if (response.data == "Virus detected") {
+                    $scope.showAlertDialog("악성코드 검출됨", "악성코드가 검출되었습니다. 악성 파일 목록에 업로드합니다.");
+                    console.log("파일 업로드 요청 시작");
+                    Upload.upload({
+                        url: "/requestfileupload",
+                        file: selectedFiles[0],
+                        data: {
+                            "currentUserId": currentUserId,
+                            "currentUserToken": currentUserToken,
+                            "currentFolderPath": "malware"
+                        }
+                    }).then(function successCallback(response) {
+                        console.log("success: ");
+                        console.log("받은 데이터:");
+                        console.log(response);
+                    }, function errorCallback(response) {
+                        console.log("error: ");
+                        console.log(response);
+                    });
+                    console.log("파일 업로드 요청 끝");
+                } else if (response.data == "Virus not detected") {
+                    $scope.showAlertDialog("악성코드 검출되지 않음", "악성코드가 검출되지 않았습니다. 현재 경로에 업로드합니다.");
+                    console.log("파일 업로드 요청 시작");
+                    Upload.upload({
+                        url: "/requestfileupload",
+                        file: selectedFiles[0],
+                        data: {
+                            "currentUserId": currentUserId,
+                            "currentUserToken": currentUserToken,
+                            "currentFolderPath": $scope.currentPath
+                        }
+                    }).then(function successCallback(response) {
+                        console.log("success: ");
+                        console.log("받은 데이터:");
+                        console.log(response);
+                        $scope.existFilesGridData.data.push({
+                            "name": selectedFiles[0].name,
+                            "lastUpdate": "만든 날짜(파일)",
+                            "size": "파일의 크기",
+                            "format": "파일"
+                        });
+                    }, function errorCallback(response) {
+                        console.log("error: ");
+                        console.log(response);
+                    });
+                    console.log("파일 업로드 요청 끝");
                 } else {
-                    alert("알 수 없는 결과");
+                    $scope.showAlertDialog("분석 실패", "알 수 없는 결과");
                 }
                 $scope.malwareTestButtonMessage = "악성코드 검사";
                 $scope.isDisableMalwareTestButton = false;
@@ -1204,6 +1275,12 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("success: ");
                     console.log("받은 데이터:");
                     console.log(response);
+                    $scope.existFilesGridData.data.push({
+                        "name": uploadFile.files[0].name,
+                        "lastUpdate": "만든 날짜(파일)",
+                        "size": "파일의 크기",
+                        "format": "파일"
+                    });
                 }, function errorCallback(response) {
                     console.log("error: ");
                     console.log(response);

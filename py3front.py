@@ -416,63 +416,28 @@ def malwarecheck():
 	#files = request.files['file']
 	files = {'file': (request.files['file'].filename, request.files['file'])}
 	scan_response = scan_file(API_KEY, files)
-
+	if scan_response == 'error':
+		return "Scan request fail"
+	elif scan_response == 'no data':
+		return "Scan data input fail"
 	report_response = report_file(API_KEY,scan_response['resource'])
 	print("report_response")
 	print(report_response)
 	if report_response == "lots of requests":
-		print("do it sssssss")
-	
+		return "Lots of requests"
+	elif report_response == "error":
+		return "Report request fail"
+	elif scan_response == 'no data':
+		return "Report data input fail"	
 	print(Total_num)
 	print(detected_cnt)
 	print(detected_cnt / Total_num)
-	
-	if scan_response == "NO Data":
-		print("No data...")
+	if detected_cnt / Total_num > 0.1:
+		return "Virus detected"
 	else:
-		if detected_cnt / Total_num > 0.1:
-			return "malware detected!"
-		else:
-			#현재 업로드하고자 하는 위치에 업로드한다.
-			return "OK"
-	'''
-	print(files)
-	params = {'apikey': API_KEY}
-	#악성 코드 분석 요청
-	response = requests.post('https://www.virustotal.com/vtapi/v2/file/scan', files=files, params=params)
-	#분석 요청 결과
-	json_response = response.json()
-	print(json_response)
-	if json_response['response_code'] != 1:
-		return jsonify({'result':'Scan request fail'})
-	
-	else:
-		#print("Scan request success. Wait for 5 seconds.")
-		#sleep(5)
-		print("Scan request success.")
-		#분석 결과 요청
-		params = {'apikey': API_KEY, 'resource': json_response['resource']}
-		headers = {
-			"Accept-Encoding": "gzip, deflate",
-			"User-Agent" : "gzip,  My Python requests library example client or username"
-		}
-		response = requests.get('https://www.virustotal.com/vtapi/v2/file/report', params=params, headers=headers)
-		#분석 결과 요청에 대한 결과
-		json_response = response.json()
-		print(json_response)
-		scanResults = list(json_response['scans'].values())
-		print(scanResults)
-		for scanResult in scanResults:
-			print("current result:")
-			print(scanResult)
-			print("current result's detected:")
-			print(scanResult['detected'])
-			if scanResult['detected']:
-				print("Virus detected!")
-				return jsonify({'result':'Virus detected'})
-		print("Virus not detected.us not detected'})
-		'''
-	return "OK"
+		#현재 업로드하고자 하는 위치에 업로드한다.
+		return "Virus not detected"
+
 detected_cnt=0
 Total_num=0
 def scan_file(APIKEY, files):
@@ -491,11 +456,10 @@ def scan_file(APIKEY, files):
 			
 		elif(scan_response['response_code']==-1):
 			print("ERROR")
-
 			return 'error'
 		else:#0
 			print("NO data !! ")
-			return "NO Data"
+			return "no data"
 
 def report_file(APIKEY,Resource):
 	while(True):
@@ -534,11 +498,10 @@ def report_file(APIKEY,Resource):
 			continue
 		elif(scan_response['response_code']==-1):
 			print("ERROR")
-
 			return 'error'
 		else:# 0
 			print("NO data !! ")
-			return "NO Data"
+			return "no data"
 
 
 '''
@@ -1097,13 +1060,9 @@ def textcompare():
 				return response.text
 		
 			#return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)		
-
-		
-
 		#after this code ----------------- front section modified code
 	textdir_list=[]
 	textdir_list = os.listdir(path_dir)
-
 	return "ok"
 
 @app.route('/dbincomeexpect', methods=['POST', 'GET'])

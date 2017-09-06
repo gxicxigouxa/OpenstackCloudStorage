@@ -1342,6 +1342,57 @@ def dbincomepersonal():
 	return str(showall)
 '''
 
+@app.route('/membertable',methods=['POST','GET'])
+def	membertable():
+	if request.method =='GET':
+		conn =mysql.connect()
+		cursor =conn.cursor()
+		query = "select * from userinfotable;"
+		cursor.execute(query)
+		conn.commit()
+			
+		result =[]
+		columns= tuple( [d[0] for d in cursor.description] )
+			
+		for row in cursor:
+			result.append(dict(zip(columns, row)))
+			print (str(result))
+		numOfJson= len(result)
+		admin_excluded_mem_num = 0
+		id =[]
+		pwd=[]
+		birth=[]
+		email=[]
+		usedmonth=[]
+		grade=[]
+		totalamount=[]
+		numofregist=[]
+		averagefee=[]
+		data= [] 
+		expiretime=[]
+
+		for i in range(numOfJson):
+			if result[i]["id"] == "admin":
+				print(result[i]["id"])
+				continue
+			id.append(result[i]["id"])
+			pwd.append(result[i]["pwd"])
+			birth.append(result[i]["birth"])
+			email.append(result[i]["email"])
+			usedmonth.append(result[i]["paymentday"])
+			expiretime.append(result[i]["expiretime"])
+			grade.append(result[i]["rating"])
+			totalamount.append(result[i]["totalamount"])
+			numofregist.append(result[i]["enrollmentnumber"])
+			averagefee.append(result[i]["yearaverageamount"])
+
+			admin_excluded_mem_num += 1
+
+
+
+
+		return jsonify({"id":id,"pwd":pwd,"birth":birth,"email":email,"usedmonth":usedmonth,"expiretime":expiretime,"grade":grade,"totalamount":totalamount,"numofregist":numofregist,"averagefee":averagefee})
+
 
 if __name__ =='__main__':
-   app.run(host='0.0.0.0',port=9999)
+   app.run(host='0.0.0.0',port=9999)	

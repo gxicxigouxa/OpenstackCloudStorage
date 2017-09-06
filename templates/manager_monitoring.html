@@ -147,6 +147,7 @@
             .controller('ManagerMonitoringCtrl', ['$scope', '$mdDialog', '$window', '$http', function($scope, $mdDialog, $window, $http) {
                 $scope.expectedSales = "";
 
+                /*
                 var dburl = "http://164.125.70.21";
                 //매개 변수로 받은 사용자 토큰을 세션에 저장하기 위한 함수.
                 function setTokenToSession(tokenValue) {
@@ -163,6 +164,7 @@
                         return null;
                     }
                 };
+                */
 
                 var selectedUsers = [];
                 //회원의 grid에 대한 속성 부여.
@@ -175,24 +177,39 @@
                     data: 'userGridData.data',
                     //데이터 열 정의.
                     //데이터베이스에서 날라오는 데이터의 JSON 형식과 맞춰서 결정.
+                    /*
+                    {"id":id,"pwd":pwd,"birth":birth,"email":email,"usedmonth":usedmonth,"expiretime":expiretime,"grade":grade,"totalamount":totalamount,"numofregist":numofregist,"averagefee":averagefee}
+                    */
                     columnDefs: [{
-                        field: 'mem_project_id',
-                        displayName: '프로젝트'
+                        field: 'id',
+                        displayName: 'ID'
                     }, {
-                        field: 'mem_permission',
-                        displayName: '권한'
-                    }, {
-                        field: 'mem_name',
-                        displayName: '이름'
-                    }, {
-                        field: 'mem_password',
+                        field: 'pwd',
                         displayName: '비밀번호'
                     }, {
-                        field: 'mem_email',
+                        field: 'birth',
+                        displayName: '생년월일'
+                    }, {
+                        field: 'email',
                         displayName: '이메일'
                     }, {
-                        field: 'mem_id',
-                        displayName: 'ID'
+                        field: 'usedmonth',
+                        displayName: '사용 월'
+                    }, {
+                        field: 'expiretime',
+                        displayName: '만료 시간'
+                    }, {
+                        field: 'grade',
+                        displayName: '등급'
+                    }, {
+                        field: 'totalamount',
+                        displayName: '총 사용 기간'
+                    }, {
+                        field: 'numofregist',
+                        displayName: '등록 횟수'
+                    }, {
+                        field: 'averagefee',
+                        displayName: '평균 요금'
                     }],
                     //grid에 대한 callback 함수를 정의.
                     //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 회원 구분 가능.
@@ -283,6 +300,7 @@
                     }
                 };
 
+                /*
                 //이하 데이터 받는 부분.
                 var xhr1 = null;
 
@@ -327,6 +345,28 @@
                 };
                 /*
                 xhr1.send();
+                */
+                $scope.userGridData.data = [];
+                //여기에서 비동기로 받자.
+                $http({
+                        method: "GET",
+                        url: "/membertable",
+                        data: {
+                        }
+                    }).then(function successCallback(response) {
+                        console.log("success: ");
+                        console.log("받은 데이터:");
+                        console.log(response);
+                        for (var i = 0; i < response.data.id.length; ++i) {                            
+                            $scope.forPushData = {"id":response.data.id[i],"pwd":response.data.pwd[i],"birth":response.data.birth[i],"email":response.data.email[i],"usedmonth":response.data.usedmonth[i],"expiretime":response.data.expiretime[i],"grade":response.data.grade[i],"totalamount":response.data.totalamount[i],"numofregist":response.data.numofregist[i],"averagefee":response.data.averagefee[i]};
+                            $scope.userGridData.data.push($scope.forPushData);
+                        }  
+                        console.log("추가 완료");
+                        console.log("data: ");                       
+                    }, function errorCallback(response) {
+                        console.log("error: " + response);
+                        $scope.showAlertDialog("결제 실패", "결제에 실패하였습니다.");
+                    });
                 //여러 데이터 선택 가능.
                 $scope.userGridData.multiSelect = true;
                 //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 가능.
@@ -402,7 +442,7 @@
                         });
                     }
                 };
-                */
+                
 
                 //페이지 초기화 함수.
                 $scope.refreshGrid = function() {

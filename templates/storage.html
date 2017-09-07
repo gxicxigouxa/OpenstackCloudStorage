@@ -41,10 +41,18 @@
                 <div class="demo-avatar-dropdown">
                     <span>[[currentUserId]]</span>
                     <div class="mdl-layout-spacer"></div>
+                    <!--
                     <button id="accbtn" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon" ng-click="clickDropDown()">
                         <i class="material-icons" role="presentation">arrow_drop_down</i>
                         <span class="visuallyhidden">Accounts</span>
                     </button>
+                    -->
+                    <md-input-container>
+                        <label>공유 사용자</label>
+                        <md-select ng-model="selectedSharingUser" ng-change="selectSharingUser()">
+                            <md-option ng-repeat="sharingUser in sharingUserList" value="[[sharingUser]]">[[sharingUser]]</md-option>
+                        </md-select>
+                    </md-input-container>
                     <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="accbtn" , id="sharingUserIdCodeList" ng-click="changeStorageBySelectedUser($scope)">
                     </ul>
                 </div>
@@ -133,9 +141,6 @@
         }
         setToken('{{token}}');
         setAdminToken('{{adminToken}}');
-        /*
-        setContainerList(JSON.parse('{"data": ' + '{{containerList}}'.split("&#39;").join('"') + "}").data);
-        */
         setContainerList(JSONToComplexString('{{containerList}}'));
         setNumberOfObjectList(JSONToComplexString('{{numberOfObjectList}}'));
         setSizeList(JSONToComplexString('{{sizeList}}'));

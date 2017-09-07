@@ -544,6 +544,136 @@ def classifyMal():
 
 '''
 
+#공유 사용자 목록 요청
+def requestSharingUserList(userId):
+	conn =mysql.connect()
+	cursor =conn.cursor()
+	query = "select * from userinfotable where id ='"+ userId +"';"
+	cursor.execute(query)
+	conn.commit()
+	result =[]
+	columns= tuple( [d[0] for d in cursor.description] )
+	for row in cursor:
+		result.append(dict(zip(columns, row)))
+	print (str(result))
+	if (str(result)=='[]'): # When there is no user id in db
+		return {"result":"error"}
+	else:
+		rawProjectId = result[0]["projectid"]
+		ProjectIdList = rawProjectId.split(',')
+	return {"result":ProjectIdList}
+@app.route('/requestsharinguserlist', methods = ['POST'])
+def requestsharinguserlist():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		return jsonify(requestSharingUserList(currentUserId))
+
+#파일 공유 요청
+def requestFileSharing(userId, userToken, folderPath, toUploadFile):
+	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
+	fileName = toUploadFile.filename
+	print("file name: " + fileName)
+	headers  ={'X-File-Name':fileName, 'x-auth-token':userToken,'content-type':'text/html', 'cache-control':'no-cache'}
+	response = requests.put(url + '/' + fileName, toUploadFile, headers=headers)
+	print(url + '/' + fileName)
+	print(response.text)
+	return response.text
+@app.route('/requestfilesharing', methods = ['POST'])
+def requestfilesharing():
+	null_role= '9fe2ff9ee4384b1894a90878d3e92bab'
+	admin_role ='812fa90f0d3d4e5187c84f00d0d77a43'
+	member_role= '4157814b8ced4164a0b050160b2ba915'
+	token_url = 'http://183.103.47.19:5000/v2.0/tokens'
+	put_tenant_url= 'http://183.103.47.19:35357/v2.0/users/'
+	delete_projectrole_url = 'http://183.103.47.19:35357/v3/projects/'
+	put_projectrole_url='http://183.103.47.19:35357/v3/projects/'
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		forSharingUserId = data["forSharingUserId"]
+
+		conn =mysql.connect()
+		cursor =conn.cursor()
+		query = "select * from userinfotable where id ='"+forSharingUserId +"';"
+		cursor.execute(query)
+		conn.commit()
+		result =[]
+		columns= tuple( [d[0] for d in cursor.description] )
+		for row in cursor:
+		   result.append(dict(zip(columns, row)))
+		print (str(result))
+
+		#공유 유저 없음
+		if (str(result)=='[]'): # When there is no user id in db
+			return "No user"
+		else:
+			headers = {"content-type":"application/json"}
+			data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
+			print(json.dumps(data))
+			admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			print(admin_token_response)
+			json_dict= json.loads(admin_token_response.text)
+			admin_token=json_dict['access']['token']['id']
+			print(json_dict)
+			
+			
+			data = {"auth":{"tenantName":forSharingUserId,"passwordCredentials":{"username":forSharingUserId,"password":result[0]["pwd"]}}}
+			headers = {'content-type':'application/json'}
+
+			forSharingProjectId = result[0]["projectid"]
+			response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
+			json_data = json.loads(response.text)
+
+			#######get the admin token
+			print(json_data)
+			forSharingUser_token=json_data["access"]["token"]["id"]
+			forSharingUser_id = json_data["access"]["user"]["id"]
+			put_tenantid_data = { "user": { "tenantId": currentUserId} }
+			headers= {'content-type':'application/json','x-auth-token':admin_token}
+			response =requests.put(url=put_tenant_url+forSharingUser_id,data =json.dumps(put_tenantid_data),headers=headers)
+			headers= {'content-type':'application/json','x-auth-token':admin_token}
+			response=requests.delete(url=delete_projectrole_url+currentUserId+'/users/'+forSharingUser_id+"/roles/"+null_role,headers=headers)
+			headers= {'content-type':'application/json','x-auth-token':admin_token}
+			response=requests.put(url=put_projectrole_url+currentUserId+'/users/'+forSharingUser_id+"/roles/"+member_role,headers=headers)
+
+			updateProjectId = forSharingProjectId + "," + currentUserId
+			query = "UPDATE userinfotable SET projectid='" + updateProjectId + "' WHERE id='" + forSharingUserId + "';"
+			print(query)
+			cursor.execute (query)
+			conn.commit()
+		return "OK"
+
+@app.route('/requestchangestorage', methods=['POST'])
+def requestchangestorage():
+	if request.method == 'POST':
+		data = request.get_json()
+		userId = data["sharingUserId"]
+		conn =mysql.connect()
+		cursor =conn.cursor()
+		query = "select * from userinfotable where id ='"+userId +"';"
+		cursor.execute(query)
+		conn.commit()
+		result =[]
+		columns= tuple( [d[0] for d in cursor.description] )
+		for row in cursor:
+		   result.append(dict(zip(columns, row)))
+		print (str(result))
+		if (str(result)=='[]'): # When there is no user id in db
+			return "error"
+		else:
+			userPwd = result[0]["pwd"]	
+			token_url = 'http://183.103.47.19:5000/v2.0/tokens'
+			data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
+			headers = {'content-type':'application/json'}
+			response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
+			json_data = json.loads(response.text)
+			token=json_data["access"]["token"]["id"]
+			print("token: " + token)
+			session["token"] = token
+			session["userId"] = userId
+	return "OK"
 @app.route('/storage')
 def storagepage():
 	numberOfObjectList = []
@@ -734,31 +864,6 @@ def requestfileupload():
 
 #TODO. 파일 다운로드 요청.
 def requestFileDownload(userId, userToken, folderPath, fileName):
-	'''
-	var xhr = getXMLHttpRequest(); //오픈스택 서버에서 로컬 드라이브로 파일을 저장하기 위한 객체
-	$scope.gridApi2.selection.getSelectedRows();
-	xhr.open("GET", convertToCorsUrl("http://164.125.70.14:8505/v1/AUTH_" + sessionStorage.getItem("currentFolderId") + "/" + $scope.folderName + "/" + $scope.selectedExistFile[0].name), true);
-	xhr.setRequestHeader("x-auth-token", getTokenFromSession());
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-	xhr.responseType = "arraybuffer";
-	xhr.onload = function(e) {
-		var arrayBufferView = new Uint8Array(this.response);
-		var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
-		var urlCreator = window.URL || window.webkitURL;
-
-		if (window.navigator.msSaveOrOpenBlob)
-			window.navigator.msSaveOrOpenBlob(blob, $scope.selectedExistFile[0].name);
-		else {
-			var a = window.document.createElement("a");
-			a.href = window.URL.createObjectURL(blob, { type: "image/jpeg" });
-			a.download = $scope.selectedExistFile[0].name;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-		}
-	};
-	xhr.send();
-	'''
 	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}

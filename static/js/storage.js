@@ -155,6 +155,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     currentUserId = $scope.currentUserId;
     currentUserPassword = $scope.currentUserPassword;
     currentUserToken = $scope.currentUserToken;
+    $scope.sharingUserList = [];
+    $scope.selectedSharingUser = "";
 
     var usedbyte = new Array();
     var Data = new Array();
@@ -172,6 +174,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
 
     //매개 변수로 이벤트를 전달해 공유 목록에 있는 사용자 중 선택한 사용자의 스토리지로 전환하기 위한 함수.
     $scope.changeStorageBySelectedUser = function($scope) {
+        /*
         sessionStorage.setItem("currentFolderId", event.target.innerHTML);
         var idData;
         var temp;
@@ -187,6 +190,51 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             location.reload(false);
         };
         xhr.send(JSON.stringify({ "auth": { "tenantName": sessionStorage.getItem("currentFolderId"), "passwordCredentials": { "username": sessionStorage.getItem("currentUserId"), "password": sessionStorage.getItem("currentUserPassword") } } }));
+        */
+    };
+
+    $scope.getSharingUserList = function() {
+        $http({
+            method: "POST",
+            url: '/requestsharinguserlist',
+            data: {
+                "currentUserId": currentUserId,
+                "currentUserToken": currentUserToken,
+                "forSharingUserId": $scope.forSharingUserId
+            }
+        }).then(function successCallback(response) {
+            console.log("success: ");
+            console.log(response);
+            /*
+            clearProjectIdRow();
+            for (var i = 0; i < response.data.result.length; ++i) {
+                addProjectIdRow(response.data.result[i]);
+            }
+            */
+            $scope.sharingUserList = response.data.result;
+            //$scope.hide();
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
+    };
+
+    $scope.getSharingUserList();
+
+    $scope.selectSharingUser = function() {
+        console.log($scope.selectedSharingUser);
+        $http({
+            method: "POST",
+            url: '/requestchangestorage',
+            data: {
+                "sharingUserId": $scope.selectedSharingUser
+            }
+        }).then(function successCallback(response) {
+            console.log("success: ");
+            console.log(response);
+            location.reload(false);
+        }, function errorCallback(response) {
+            console.log("error: " + response);
+        });
     };
 
     $scope.selectedFolder = [];
@@ -252,6 +300,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         //공유하고자 하는 사용자의 ID를 입력한 후 "공유" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
         //입력한 사용자가 공유 목록에 나타나도록 구성.
         $scope.clickSharingButton = function() {
+            /*
             xhr1 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 가져오기 위한 객체
             xhr2 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 삭제하기 위한 객체
             xhr3 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 갱신하기 위한 객체
@@ -290,6 +339,21 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 }
             };
             xhr1.send(null);
+            */
+            $http({
+                method: "POST",
+                url: '/requestfilesharing',
+                data: {
+                    "currentUserId": currentUserId,
+                    "currentUserToken": currentUserToken,
+                    "forSharingUserId": $scope.forSharingUserId
+                }
+            }).then(function successCallback(response) {
+                console.log("success: " + response);
+                //$scope.hide();
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
         };
 
         //dialog 닫기.

@@ -15,7 +15,8 @@ var httpRequest = null;
 var token = "";
 var adminToken = "";
 var containerList = [];
-//var storageListString = "";
+var numberOfObjectList = [];
+var sizeList = [];
 
 function setToken(currentToken) {
     token = currentToken;
@@ -26,13 +27,16 @@ function setAdminToken(currentAdminToken) {
     adminToken = currentAdminToken;
 }
 
-/*
-function setStorageListString(currentStorageListString) {
-    storageListString = currentStorageListString;
+function setContainerList(currentList) {
+    containerList = currentList;
 }
-*/
-function setContainerList(currentContainerList) {
-    containerList = currentContainerList;
+
+function setNumberOfObjectList(currentList) {
+    numberOfObjectList = currentList;
+}
+
+function setSizeList(currentList) {
+    sizeList = currentList;
 }
 
 
@@ -141,6 +145,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     console.log("adminToken: " + adminToken);
     console.log("containerList: ");
     console.log(containerList);
+    console.log(numberOfObjectList);
+    console.log(sizeList);
     //$scope.storageList = storageListString.split("/");
     //console.log($scope.storageList);
     $scope.currentUserId = sessionStorage.getItem("currentUserId");
@@ -195,7 +201,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     var tmpl = '<div ng-if="!row.entity.editable">{{COL_FIELD}}</div><div ng-if="row.entity.editable"><input ng-model="MODEL_COL_FIELD"></div>';
     $scope.gridOptions.columnDefs = [
         { name: 'name', displayName: '폴더 이름', headerCellClass: 'header', cellClass: 'row', cellTemplate: tmpl },
-        { name: 'makeDate', displayName: '생성 날짜', headerCellClass: 'header', cellClass: 'row' },
         { name: 'numberOfObject', displayName: '파일 갯수', allowCellFocus: true, headerCellClass: 'header', cellClass: 'row' },
         { name: 'size', displayName: '크기', headerCellClass: 'header', cellClass: 'row' }
     ];
@@ -207,7 +212,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     $scope.addExistedStorage = function() {
         for (var i = 0; i < containerList.length; ++i) {
             if (containerList[i] != "malware" && containerList[i] != "textcompare") {
-                $scope.gridOptions.data.push({ name: containerList[i], makeDate: "(만든 날짜)", numberOfObject: "(내부 파일 갯수)", size: "(스토리지 크기)" });
+                $scope.gridOptions.data.push({ name: containerList[i], numberOfObject: numberOfObjectList[i], size: formatByte(parseInt(sizeList[i])) });
             }
         }
     }
@@ -247,7 +252,6 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         //공유하고자 하는 사용자의 ID를 입력한 후 "공유" 버튼을 눌렀을 때의 동작을 수행하기 위한 함수.
         //입력한 사용자가 공유 목록에 나타나도록 구성.
         $scope.clickSharingButton = function() {
-
             xhr1 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 가져오기 위한 객체
             xhr2 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 삭제하기 위한 객체
             xhr3 = getXMLHttpRequest(); //데이터 베이스 서버에서 공유할 상대 정보를 갱신하기 위한 객체

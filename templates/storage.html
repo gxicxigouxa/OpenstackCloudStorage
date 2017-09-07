@@ -127,9 +127,18 @@
     <script type="text/javascript " src="{{ url_for( 'static', filename='util/ng-file-upload-shim.min.js' ) }} "></script>
     <script type="text/javascript " src="{{ url_for( 'static', filename='js/storage.js' ) }} "></script>
     <script type="text/javascript">
+        function JSONToComplexString(complexString) {
+            console.log(JSON.parse('{"data": ' + complexString.split("&#39;").join('"') + "}").data);
+            return JSON.parse('{"data": ' + complexString.split("&#39;").join('"') + "}").data;
+        }
         setToken('{{token}}');
         setAdminToken('{{adminToken}}');
+        /*
         setContainerList(JSON.parse('{"data": ' + '{{containerList}}'.split("&#39;").join('"') + "}").data);
+        */
+        setContainerList(JSONToComplexString('{{containerList}}'));
+        setNumberOfObjectList(JSONToComplexString('{{numberOfObjectList}}'));
+        setSizeList(JSONToComplexString('{{sizeList}}'));
     </script>
 </body>
 

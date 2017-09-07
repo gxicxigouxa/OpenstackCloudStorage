@@ -546,6 +546,8 @@ def classifyMal():
 
 @app.route('/storage')
 def storagepage():
+	numberOfObjectList = []
+	sizeList = []
 	#토큰에 대한 컨테이너 목록 요청
 	print(session["userId"])
 	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
@@ -554,19 +556,29 @@ def storagepage():
 	print(container_url)
 	#print(response.text.split("\n"))
 	containerList = response.text.split("\n")[:-1]
+	for currentContainer in containerList:
+		currentResponse = requests.get(container_url + "/" + currentContainer ,headers=headers)
+		print(currentResponse.headers)
+		numberOfObjectList.append(currentResponse.headers["X-Container-Object-Count"])
+		sizeList.append(currentResponse.headers["X-Container-Bytes-Used"])
+	response = requests.get(container_url,headers=headers)
 	#storageListString = "/".join(storageList)
 	print(containerList)
 	#session["storageListString"] = storageListString
 	print("session token: " + session["token"])
 	print("session containerList: ")
 	print(containerList)
+	print("numberOfObjectList: ")
+	print(numberOfObjectList)
+	print("sizeList: ")
+	print(sizeList)
 	
 	#여기도 계속 토큰 요청하면 문제 생길 수 있으므로 임의의 관리자 토큰과 스토리지 목록을 사용한다.
 	'''
 	admin_token = "789789789thisistempadmintoken55555"
 	containerList = ["컨테이너1", "문서", "사진", "temp1", "temp2", "임시"]
 	'''
-	return render_template("storage.html", token = session["token"], adminToken = session["adminToken"], containerList = containerList)
+	return render_template("storage.html", token = session["token"], adminToken = session["adminToken"], containerList = containerList, numberOfObjectList = numberOfObjectList, sizeList = sizeList)
 
 @app.route('/monitoring')
 def monitoringpage():

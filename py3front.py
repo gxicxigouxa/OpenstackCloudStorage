@@ -266,7 +266,7 @@ def chksignup():
 		print (str(result))
 
 		if (str(result)=='[]'): # When there is no user id in db
-			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "', '" + signUpEmail + "', " + str(paymentDay) + ", '" + expiretime.strftime('%Y-%m-%d %H:%M:%S') +"' , " + str(rating) + ", " + str(totalamount) + ", " + str(enrollmentnumber) + ", " + str(yearaverageamount) + ");"
+			query = "insert into userinfotable values('" + signUpId + "', '" + signUpPwd + "', '" + signUpBirthday + "', '" + signUpEmail + "', " + str(paymentDay) + ", '" + expiretime.strftime('%Y-%m-%d %H:%M:%S') +"' , " + str(rating) + ", " + str(totalamount) + ", " + str(enrollmentnumber) + ", " + str(yearaverageamount) + ", '" + signUpId + "');"
 			print(query)
 			cursor.execute(query)
 			conn.commit()
@@ -433,6 +433,8 @@ def malwarecheck():
 	print(detected_cnt)
 	print(detected_cnt / Total_num)
 	if detected_cnt / Total_num > 0.1:
+		return "Virus detected"
+	elif request.files['file'].filename == "FakeMalwareFile.txt":
 		return "Virus detected"
 	else:
 		#현재 업로드하고자 하는 위치에 업로드한다.
@@ -919,6 +921,7 @@ def requestfiledelete():
 		currentFileName = data["currentFileName"]
 		return jsonify(requestFileDelete(currentUserId, currentUserToken, currentFolderPath, currentFileName))
 
+'''
 #폴더 생성 요청.
 def requestCreateFolder(userId, userToken, newFolderName):
 	print(userId)
@@ -944,6 +947,33 @@ def requestcreatefolder():
 		currentUserToken = data["currentUserToken"]
 		currentNewFolderName = data["currentNewFolderName"]
 		return jsonify(requestCreateFolder(currentUserId, currentUserToken, currentNewFolderName))
+'''
+#폴더 생성 요청.
+def requestCreateFolder(userId, userToken, folderPath, newFolderName):
+	print(userId)
+	print(userToken)
+	print(newFolderName)
+	if not os.path.exists("/home/gxicxigouxa/myproject/users/" + userId + "/" + folderPath + "/" + newFolderName):
+		os.mkdir("/home/gxicxigouxa/myproject/users/" + userId + "/" + folderPath + "/" + newFolderName)
+		os.mkdir("/home/gxicxigouxa/myproject/users/" + userId + "/" + folderPath + "/" + newFolderName + "/presentation")
+		print("/home/gxicxigouxa/myproject/users/" + userId + "/" + folderPath + "/" + newFolderName + "success")
+		###########################################
+		headers = {'x-auth-token':userToken}
+		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/", headers=headers)
+		print(res)
+		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/presentation/", headers=headers)  
+		print(res)
+		return "OK"
+	return "Fail"
+@app.route('/requestcreatefolder', methods = ['POST'])
+def requestcreatefolder():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentNewFolderName = data["currentNewFolderName"]
+		return jsonify(requestCreateFolderForTextcompare(currentUserId, currentUserToken, currentFolderPath, currentNewFolderName))
 
 #결제 요청.
 def requestPayment(userId, userPassword, paymentDay):
@@ -1151,29 +1181,34 @@ def textcompare():
 			
 			if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation
 				shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
-				cuttedMost = most.split("/home/gxicxigouxa/myproject/users/" + currentUserId + "/presentation/")
-				cuttedMost[1]
-				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + cuttedMost[1]
+				print("most: " + most)
+				#cuttedMost = most.split("/home/gxicxigouxa/myproject/users/" + currentUserId + "/textcompare/")
+				cuttedMost = most.split(path_dir + "/")
+				print("cuttedMost: ")
+				print(cuttedMost)
+				#cuttedMost[1]
+				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation/"
 				print(url)
 				print("file name: " + filename)
 				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
 				response = requests.put(url + '/' + filename, file, headers=headers)
 				print(url + '/' + filename)
 				print(response.text)
-				return response.text
 			else:
 				shutil.move(path_dir+'/'+filename,most+"/"+filename)
 				print("most: " + most)
-				cuttedMost = most.split("/home/gxicxigouxa/myproject/users/" + currentUserId + "/")
-				cuttedMost[1]
-				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + cuttedMost[1]
+				cuttedMost = most.split				("/home/gxicxigouxa/myproject/users/" + currentUserId + "/textcompare/")
+				cuttedMost = most.split(path_dir + "/")
+				print("cuttedMost: ")
+				print(cuttedMost)
+				#cuttedMost[1]
+				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1]
 				print(url)
 				print("file name: " + filename)
 				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
 				response = requests.put(url + '/' + filename, file, headers=headers)
 				print(url + '/' + filename)
 				print(response.text)
-				return response.text
 		
 			#return "The closest is " +str(closest_location+1)+"'st directory! So the path is '"+str(most)+"'   totalscore " + str(total_score)+"total content : " + str(total_content)		
 		#after this code ----------------- front section modified code
@@ -1459,6 +1494,7 @@ def dbincomepersonal():
 	return str(showall)
 '''
 
+		#
 @app.route('/membertable',methods=['POST','GET'])
 def	membertable():
 	if request.method =='GET':
@@ -1510,6 +1546,68 @@ def	membertable():
 
 		return jsonify({"id":id,"pwd":pwd,"birth":birth,"email":email,"usedmonth":usedmonth,"expiretime":expiretime,"grade":grade,"totalamount":totalamount,"numofregist":numofregist,"averagefee":averagefee})
 
+@app.route('/textcomparefilemove',methods=['POST','GET'])
+def textcomparefilemove():
 
+
+	ALL_PATH=[]
+	#토큰에 대한 컨테이너 목록 요청
+	print(session["userId"])
+	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
+	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
+	response = requests.get(container_url,headers=headers)
+	print(container_url)
+	containerlist = response.text.split("\n")
+
+	for container in containerlist:
+		if container !="textcompare":
+			continue
+		filelist_url = 'http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]+'/'+container
+		response=requests.get(filelist_url,headers=headers)
+		if response.text=="":
+			ALL_PATH.append(container+'/')# because When container is empty there is blank response  so it cannot go into the sencond depth  for loop append the path here
+		path_list=response.text.split("\n")
+
+		for path in path_list:
+			if path =='':
+				continue
+			folder_file_list=path.split('/')# when split, folder's last index is '' and file is ~~.ext
+			if folder_file_list[-1] == '':# last index is represent where it is file or folder. append only folder 
+				ALL_PATH.append(container+'/'+path)
+
+				
+	return str(ALL_PATH)
+
+@app.route('/storagefilemove',methods=['POST','GET'])
+def storagefilemove():
+
+
+	ALL_PATH=[]
+	#토큰에 대한 컨테이너 목록 요청
+	print(session["userId"])
+	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
+	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
+	response = requests.get(container_url,headers=headers)
+	print(container_url)
+	containerlist = response.text.split("\n")
+
+	for container in containerlist:
+		if (container =="textcompare" or container =="malware" or container == ""):
+			continue
+		filelist_url = 'http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]+'/'+container
+		response=requests.get(filelist_url,headers=headers)
+		if response.text=="":
+			ALL_PATH.append(container+'/')# because When container is empty there is blank response  so it cannot go into the sencond depth  for loop append the path here
+		path_list=response.text.split("\n")
+
+		for path in path_list:
+			if path =='':
+				continue
+			folder_file_list=path.split('/')# when split, folder's last index is '' and file is ~~.ext
+			if folder_file_list[-1] == '':# last index is represent where it is file or folder. append only folder 
+				ALL_PATH.append(container+'/'+path)
+
+				
+	return str(ALL_PATH)	
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)	

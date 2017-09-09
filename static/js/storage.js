@@ -777,12 +777,14 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("success: ");
                     console.log("받은 데이터:");
                     console.log(response);
+                    /*
                     $scope.existFilesGridData.data.push({
                         "name": uploadFile.files[0].name,
                         "lastUpdate": "만든 날짜(파일)",
                         "size": "파일의 크기",
                         "format": "파일"
                     });
+                    */
                 }, function errorCallback(response) {
                     console.log("error: ");
                     console.log(response);
@@ -1412,6 +1414,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 data: {
                     "currentUserId": currentUserId,
                     "currentUserToken": currentUserToken,
+                    "currentFolderPath": "textcompare",
                     "currentNewFolderName": $scope.newFolderName
                 }
             }).then(function successCallback(response) {

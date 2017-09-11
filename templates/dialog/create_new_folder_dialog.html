@@ -1,0 +1,26 @@
+<md-dialog aria-label="createNewFolderDialogContent" class="create-new-folder-content-container">
+    <div class="md-toolbar-tools">
+        <h2></h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="create_new_folder_dialog-header">
+            </div>
+            <div class="create_new_folder_dialog-container" layout-gt-xs="row">
+                <md-input-container class="md-block" flax-gt-xs>
+                    <label>새 폴더명</label>
+                    <input ng-model="newFolderName">
+                </md-input-container>
+            </div>
+            <div class="create_new_folder_dialog-button">
+                <md-button ng-click="clickOkButton()">확인</md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

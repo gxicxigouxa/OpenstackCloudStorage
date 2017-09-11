@@ -113,6 +113,7 @@ mystopword = frozenset([
 TXT_DIRECTORY= '/home/gxicxigouxa/myproject/textcompare'
 UPLOAD_FOLDER= '/home/gxicxigouxa/myproject' # path convert!! (when i use different server)
 ALLOWED_EXTENSIONS =    set(['txt','pdf','png','jpg','jpeg','gif','doc','exe','docx','hwp','pptx'])
+OPENSTACK_IP = "183.103.47.19"
 
 #app = Flask(__name__,template_folder='templates', static_folder='/home/asdiste/myproject/templates')
 app = Flask(__name__, static_path='/static')
@@ -167,7 +168,7 @@ def showloginpage():
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
 	print(json.dumps(data))
-	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	admin_token_response = requests.post('http://' + OPENSTACK_IP + ':5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 	print(admin_token_response)
 	json_dict= json.loads(admin_token_response.text)
 	admin_token=json_dict['access']['token']['id']
@@ -210,7 +211,7 @@ def chklogin():
 			elif(result[0]["pwd"]==userPwd and (convertedDatetime > current_time)):#pwd is correct
 				#토큰 가져오기
 				print("after compare")		
-				token_url = 'http://183.103.47.19:5000/v2.0/tokens'
+				token_url = 'http://' + OPENSTACK_IP + ':5000/v2.0/tokens'
 				data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
 				headers = {'content-type':'application/json'}
 				response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
@@ -275,7 +276,7 @@ def chksignup():
 			headers = {"content-type":"application/json"}
 			data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
 			print(json.dumps(data))
-			admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			admin_token_response = requests.post('http://' + OPENSTACK_IP + ':5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 			print(admin_token_response)
 			json_dict= json.loads(admin_token_response.text)
 			admin_token=json_dict['access']['token']['id']
@@ -284,13 +285,13 @@ def chksignup():
 			#### tenant create
 			headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 			data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
-			response = requests.post('http://183.103.47.19:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+			response = requests.post('http://' + OPENSTACK_IP + ':35357/v2.0/tenants',data = json.dumps(data),headers=headers)
 			print(response)
 			#############################
 			######User Create#######
 			#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 			data = {"user":{"email":signUpEmail,"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
-			response = requests.post('http://183.103.47.19:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+			response = requests.post('http://' + OPENSTACK_IP + ':35357/v2.0/users',data = json.dumps(data),headers=headers)	
 			print(response)
 			json_dict = json.loads(response.text)
 			print(json_dict)
@@ -298,7 +299,7 @@ def chksignup():
 			###############################################
 			######Role Create ###########################
 			#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
-			response= requests.put('http://183.103.47.19:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+			response= requests.put('http://' + OPENSTACK_IP + ':35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
 			print(response)			
 			if not os.path.exists("/home/gxicxigouxa/myproject/users/" + signUpId):
 				os.mkdir("/home/gxicxigouxa/myproject/users/" + signUpId)
@@ -309,14 +310,14 @@ def chksignup():
 			
 			headers ={'content-type':'application/json'}
 			data= {"auth":{"tenantName":signUpId,"passwordCredentials":{"username":signUpId,"password":signUpPwd}}}
-			res = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			res = requests.post('http://' + OPENSTACK_IP + ':5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 			json_dict= json.loads(res.text)
 			created_user_token=json_dict['access']['token']['id']
 			print("user_toekd: " + created_user_token)
 			headers = {'x-auth-token':created_user_token}
-			res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+signUpId+'/textcompare',headers=headers)
+			res = requests.put('http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+signUpId+'/textcompare',headers=headers)
 			print(res)
-			res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+signUpId+'/malware',headers=headers)      
+			res = requests.put('http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+signUpId+'/malware',headers=headers)      
 			print(res)
 			
 			return render_template('oldlogin.html',login_err_code ="none", sign_up_err_code = "success")
@@ -355,7 +356,7 @@ def urltest():
 	
 	headers = {"content-type":"application/json"}
 	data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
-	admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+	admin_token_response = requests.post('http://' + OPENSTACK_IP + ':5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 	print(admin_token_response)
 	json_dict= json.loads(admin_token_response.text)
 	admin_token=json_dict['access']['token']['id']
@@ -368,19 +369,19 @@ def urltest():
 
 	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 	data = {"tenant":{	"name": signUpId,"description":signUpId,"id":signUpId}}
-	response = requests.post('http://183.103.47.19:35357/v2.0/tenants',data = json.dumps(data),headers=headers)
+	response = requests.post('http://' + OPENSTACK_IP + ':35357/v2.0/tenants',data = json.dumps(data),headers=headers)
 	print(response)
 
 	#	headers =  {"content-type":"application/json", "x-auth-token":admin_token}
 	data = {"user":{"email":signUpEmail,	"password":signUpPwd,"name":signUpId,"id":signUpId }}# id is project id 
-	response = requests.post('http://183.103.47.19:35357/v2.0/users',data = json.dumps(data),headers=headers)	
+	response = requests.post('http://' + OPENSTACK_IP + ':35357/v2.0/users',data = json.dumps(data),headers=headers)	
 	print(response)
 	json_dict = json.loads(response.text)
 	print(json_dict)
 	user_id =json_dict['user']['id']# id is not real id (signup id is user nam ) ex>8cc705d2c8bc4a1f8874f50eee32fc92
 
 	#	headers = {"content-type":"application/json", "x-auth-token":admin_token}
-	response= requests.put('http://183.103.47.19:35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
+	response= requests.put('http://' + OPENSTACK_IP + ':35357/v3/projects/'+signUpId+'/users/'+user_id+'/roles/4157814b8ced4164a0b050160b2ba915',headers=headers)
 	print(response)
 
 	return "ok"
@@ -573,7 +574,7 @@ def requestsharinguserlist():
 
 #파일 공유 요청
 def requestFileSharing(userId, userToken, folderPath, toUploadFile):
-	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath
 	fileName = toUploadFile.filename
 	print("file name: " + fileName)
 	headers  ={'X-File-Name':fileName, 'x-auth-token':userToken,'content-type':'text/html', 'cache-control':'no-cache'}
@@ -586,10 +587,10 @@ def requestfilesharing():
 	null_role= '9fe2ff9ee4384b1894a90878d3e92bab'
 	admin_role ='812fa90f0d3d4e5187c84f00d0d77a43'
 	member_role= '4157814b8ced4164a0b050160b2ba915'
-	token_url = 'http://183.103.47.19:5000/v2.0/tokens'
-	put_tenant_url= 'http://183.103.47.19:35357/v2.0/users/'
-	delete_projectrole_url = 'http://183.103.47.19:35357/v3/projects/'
-	put_projectrole_url='http://183.103.47.19:35357/v3/projects/'
+	token_url = 'http://' + OPENSTACK_IP + ':5000/v2.0/tokens'
+	put_tenant_url= 'http://' + OPENSTACK_IP + ':35357/v2.0/users/'
+	delete_projectrole_url = 'http://' + OPENSTACK_IP + ':35357/v3/projects/'
+	put_projectrole_url='http://' + OPENSTACK_IP + ':35357/v3/projects/'
 	if request.method == 'POST':
 		data = request.get_json()
 		currentUserId = data["currentUserId"]
@@ -614,7 +615,7 @@ def requestfilesharing():
 			headers = {"content-type":"application/json"}
 			data= {"auth":{"tenantName":"admin","passwordCredentials":{"username":"admin","password":"openstack"}}}
 			print(json.dumps(data))
-			admin_token_response = requests.post('http://183.103.47.19:5000/v2.0/tokens',data=json.dumps(data),headers=headers)
+			admin_token_response = requests.post('http://' + OPENSTACK_IP + ':5000/v2.0/tokens',data=json.dumps(data),headers=headers)
 			print(admin_token_response)
 			json_dict= json.loads(admin_token_response.text)
 			admin_token=json_dict['access']['token']['id']
@@ -666,7 +667,7 @@ def requestchangestorage():
 			return "error"
 		else:
 			userPwd = result[0]["pwd"]	
-			token_url = 'http://183.103.47.19:5000/v2.0/tokens'
+			token_url = 'http://' + OPENSTACK_IP + ':5000/v2.0/tokens'
 			data = {"auth":{"tenantName":userId,"passwordCredentials":{"username":userId,"password":userPwd}}}
 			headers = {'content-type':'application/json'}
 			response = requests.post(url=token_url,data=json.dumps(data),headers=headers)
@@ -682,7 +683,7 @@ def storagepage():
 	sizeList = []
 	#토큰에 대한 컨테이너 목록 요청
 	print(session["userId"])
-	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
+	container_url ='http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ session["userId"]
 	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
 	response = requests.get(container_url,headers=headers)
 	print(container_url)
@@ -728,7 +729,7 @@ def createcontainer():
 	currentUserId = data["currentUserId"]
 	currentUserToken = data["currentUserToken"]
 	print(newContainerName + ", " + currentUserId + ", " + currentUserToken)	
-	url ='http://183.103.47.19:8080/v1/AUTH_'+ currentUserId
+	url ='http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId
 	headers  ={'x-auth-token':currentUserToken,'x-container-read':'.r:*'}
 	response = requests.put(url+ '/' +newContainerName, headers=headers)
 	print(url+'/'+ newContainerName)
@@ -739,7 +740,7 @@ def createcontainer():
 
 #폴더 내 파일 리스트 요청.
 def requestFileList(userId, userToken, folderPath):
-	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url+'/'+ folderPath,headers=headers)
 	print(url + '/' + folderPath)
@@ -784,7 +785,7 @@ def requestfilelist():
 
 def requestInnerFileList(userId, userToken, folderPath):
 	containerName = folderPath[:folderPath.find('/')]
-	url = 'http://183.103.47.19:8080/v1/AUTH_' + userId + '/' + containerName + '?prefix=' + folderPath[folderPath.find('/') + 1:] + '/&delimiter=/'
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_' + userId + '/' + containerName + '?prefix=' + folderPath[folderPath.find('/') + 1:] + '/&delimiter=/'
 	headers  ={'x-auth-token':userToken,'content-type':'application/json'}
 	response = requests.get(url,headers=headers)
 	print(url)
@@ -800,11 +801,17 @@ def requestInnerFileList(userId, userToken, folderPath):
 	print("previousPath: " + folderPath[folderPath.find('/') + 1:])
 	cur_folderpath=folderPath[folderPath.find('/') + 1:]+'/'
 	print("cur_folderpath: " + cur_folderpath)
+	'''
 	for rawPath in rawPathList:
 		print(rawPath)
 		strarray = rawPath.split(cur_folderpath)
 		if len(strarray) >= 2:
 			cuttedPathList.append(strarray[1])
+	'''
+	for rawPath in rawPathList:
+		print("rawPath: " + rawPath)
+		cuttedPath = rawPath[len(cur_folderpath):]
+		cuttedPathList.append(cuttedPath)
 	print("cutted List: ")
 	print(cuttedPathList)
 	print("cuttedPathList[1:]: ")
@@ -839,7 +846,7 @@ def requestinnerfilelist():
 
 #파일 업로드 요청.
 def requestFileUpload(userId, userToken, folderPath, toUploadFile):
-	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath
 	fileName = toUploadFile.filename
 	print("file name: " + fileName)
 	headers  ={'X-File-Name':fileName, 'x-auth-token':userToken,'content-type':'text/html', 'cache-control':'no-cache'}
@@ -866,7 +873,7 @@ def requestfileupload():
 
 #TODO. 파일 다운로드 요청.
 def requestFileDownload(userId, userToken, folderPath, fileName):
-	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
 	response = requests.get(url + '/' + fileName, headers=headers)
@@ -890,7 +897,7 @@ def requestfiledownload():
 		currentFolderPath = data["currentFolderPath"]
 		currentFileName = data["currentFileName"]
 		#return send_file(requestFileDownload(currentUserId, currentUserToken, currentFolderPath, currentFileName))
-		url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/" + currentFolderPath
+		url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/" + currentFolderPath
 		print("file name: " + currentFileName)
 		headers  ={'x-auth-token':currentUserToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
 		response = requests.get(url + '/' + currentFileName, headers=headers)
@@ -903,7 +910,7 @@ def requestfiledownload():
 
 #파일 삭제 요청.
 def requestFileDelete(userId, userToken, folderPath, fileName):
-	url = 'http://183.103.47.19:8080/v1/AUTH_'+ userId + "/" + folderPath
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath
 	#fileName에 encodeURIComponent를 걸어야 하나?...
 	print("file name: " + fileName)
 	headers  ={'x-auth-token':userToken, 'content-type':'text/html', 'cache-control':'no-cache'}
@@ -948,8 +955,8 @@ def requestcreatefolder():
 		currentNewFolderName = data["currentNewFolderName"]
 		return jsonify(requestCreateFolder(currentUserId, currentUserToken, currentNewFolderName))
 '''
-#폴더 생성 요청.
-def requestCreateFolder(userId, userToken, folderPath, newFolderName):
+#폴더 생성 요청(textcompare용).
+def requestCreateFolderForTextcompare(userId, userToken, folderPath, newFolderName):
 	print(userId)
 	print(userToken)
 	print(newFolderName)
@@ -959,12 +966,32 @@ def requestCreateFolder(userId, userToken, folderPath, newFolderName):
 		print("/home/gxicxigouxa/myproject/users/" + userId + "/" + folderPath + "/" + newFolderName + "success")
 		###########################################
 		headers = {'x-auth-token':userToken}
-		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/", headers=headers)
+		res = requests.put('http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/", headers=headers)
 		print(res)
-		res = requests.put('http://183.103.47.19:8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/presentation/", headers=headers)  
+		res = requests.put('http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+userId+'/textcompare/' + newFolderName + "/presentation/", headers=headers)  
 		print(res)
 		return "OK"
 	return "Fail"
+@app.route('/requestcreatefolderfortextcompare', methods = ['POST'])
+def requestcreatefolderfortextcompare():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentNewFolderName = data["currentNewFolderName"]
+		return jsonify(requestCreateFolderForTextcompare(currentUserId, currentUserToken, currentFolderPath, currentNewFolderName))
+
+#폴더 생성 요청.
+def requestCreateFolder(userId, userToken, folderPath, newFolderName):
+	print(userId)
+	print(userToken)
+	print(newFolderName)
+	###########################################
+	headers = {'x-auth-token':userToken}
+	res = requests.put('http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+userId+'/' + folderPath + "/" + newFolderName + "/", headers=headers)
+	print(res)
+	return "OK"
 @app.route('/requestcreatefolder', methods = ['POST'])
 def requestcreatefolder():
 	if request.method == 'POST':
@@ -973,7 +1000,40 @@ def requestcreatefolder():
 		currentUserToken = data["currentUserToken"]
 		currentFolderPath = data["currentFolderPath"]
 		currentNewFolderName = data["currentNewFolderName"]
-		return jsonify(requestCreateFolderForTextcompare(currentUserId, currentUserToken, currentFolderPath, currentNewFolderName))
+		return jsonify(requestCreateFolder(currentUserId, currentUserToken, currentFolderPath, currentNewFolderName))
+
+#파일 이동 요청.
+def requestMoveFile(userId, userToken, fileName, folderPath, targetPath):
+	print(userId)
+	print(userToken)
+	print(fileName)
+	print(folderPath)
+	print(targetPath)
+	
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + targetPath + fileName
+	headers = {'x-auth-token':userToken, 'x-copy-from': folderPath + '/' + fileName, 'content-length': '0'}
+	#404 출력. 아마도 content-length 때문인것 같다...
+	res = requests.put(url, headers = headers)
+	
+	'''
+	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath + "/" + fileName
+	headers = {'x-auth-token':userToken, 'destination':targetPath + fileName}
+	res = requests.copy(url, headers = headers)
+	'''
+	print(res)
+	res.raise_for_status()
+	res = requestFileDelete(userId, userToken, folderPath, fileName)
+	return "TODO."
+@app.route('/requestmovefile', methods = ['POST'])
+def requestmovefile():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFileName = data["currentFileName"]
+		currentFolderPath = data["currentFolderPath"]
+		targetFolderPath = data["targetFolderPath"]
+		return jsonify(requestMoveFile(currentUserId, currentUserToken, currentFileName, currentFolderPath, targetFolderPath))
 
 #결제 요청.
 def requestPayment(userId, userPassword, paymentDay):
@@ -1187,7 +1247,7 @@ def textcompare():
 				print("cuttedMost: ")
 				print(cuttedMost)
 				#cuttedMost[1]
-				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation/"
+				url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation/"
 				print(url)
 				print("file name: " + filename)
 				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
@@ -1202,7 +1262,7 @@ def textcompare():
 				print("cuttedMost: ")
 				print(cuttedMost)
 				#cuttedMost[1]
-				url = 'http://183.103.47.19:8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1]
+				url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1]
 				print(url)
 				print("file name: " + filename)
 				headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
@@ -1541,19 +1601,14 @@ def	membertable():
 
 			admin_excluded_mem_num += 1
 
-
-
-
 		return jsonify({"id":id,"pwd":pwd,"birth":birth,"email":email,"usedmonth":usedmonth,"expiretime":expiretime,"grade":grade,"totalamount":totalamount,"numofregist":numofregist,"averagefee":averagefee})
 
 @app.route('/textcomparefilemove',methods=['POST','GET'])
 def textcomparefilemove():
-
-
 	ALL_PATH=[]
 	#토큰에 대한 컨테이너 목록 요청
 	print(session["userId"])
-	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
+	container_url ='http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ session["userId"]
 	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
 	response = requests.get(container_url,headers=headers)
 	print(container_url)
@@ -1562,7 +1617,7 @@ def textcomparefilemove():
 	for container in containerlist:
 		if container !="textcompare":
 			continue
-		filelist_url = 'http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]+'/'+container
+		filelist_url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ session["userId"]+'/'+container
 		response=requests.get(filelist_url,headers=headers)
 		if response.text=="":
 			ALL_PATH.append(container+'/')# because When container is empty there is blank response  so it cannot go into the sencond depth  for loop append the path here
@@ -1575,17 +1630,16 @@ def textcomparefilemove():
 			if folder_file_list[-1] == '':# last index is represent where it is file or folder. append only folder 
 				ALL_PATH.append(container+'/'+path)
 
-				
-	return str(ALL_PATH)
+	
+	#return str(ALL_PATH)
+	return jsonify({"pathList":ALL_PATH})
 
 @app.route('/storagefilemove',methods=['POST','GET'])
 def storagefilemove():
-
-
 	ALL_PATH=[]
 	#토큰에 대한 컨테이너 목록 요청
 	print(session["userId"])
-	container_url ='http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]
+	container_url ='http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ session["userId"]
 	headers  ={'x-auth-token':session["token"],'content-type':'application/json'}
 	response = requests.get(container_url,headers=headers)
 	print(container_url)
@@ -1594,7 +1648,7 @@ def storagefilemove():
 	for container in containerlist:
 		if (container =="textcompare" or container =="malware" or container == ""):
 			continue
-		filelist_url = 'http://183.103.47.19:8080/v1/AUTH_'+ session["userId"]+'/'+container
+		filelist_url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ session["userId"]+'/'+container
 		response=requests.get(filelist_url,headers=headers)
 		if response.text=="":
 			ALL_PATH.append(container+'/')# because When container is empty there is blank response  so it cannot go into the sencond depth  for loop append the path here
@@ -1607,7 +1661,8 @@ def storagefilemove():
 			if folder_file_list[-1] == '':# last index is represent where it is file or folder. append only folder 
 				ALL_PATH.append(container+'/'+path)
 
-				
-	return str(ALL_PATH)	
+	
+	return jsonify({"pathList":ALL_PATH})
+	#return str(ALL_PATH)	
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)	

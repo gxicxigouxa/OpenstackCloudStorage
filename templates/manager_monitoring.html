@@ -26,7 +26,7 @@
                 </md-tab>
                 <md-tab label="예상 매출액" ng-click="showChart()">
                     <div id="chart-container">
-                        <div id="container" style="min-width: 400px; height: 500px; margin: 0 auto"></div>
+                        <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
                     </div>
                     <div id="expected-sales-div">
                         <p>총 연 매상 매출액: <span ng-bind="expectedSales"></span>원</p>
@@ -242,34 +242,60 @@
 
                         Highcharts.chart('container', {
                             chart: {
-                                type: 'line'
+                                type: 'column'
                             },
                             title: {
                                 text: '연 예상 매출액'
                             },
                             subtitle: {
-                                text: '사용자별 예상액'
+                                text: '월별 예상 매출액'
                             },
                             xAxis: {
-                                categories: response.data.id
+                                categories: [
+                                    '1월',
+                                    '2월',
+                                    '3월',
+                                    '4월',
+                                    '5월',
+                                    '6월',
+                                    '7월',
+                                    '8월',
+                                    '9월',
+                                    '10월',
+                                    '11월',
+                                    '12월'
+                                ],
+                                crosshair: true
                             },
                             yAxis: {
+                                min: 0,
                                 title: {
-                                    text: '요금(원)'
+                                    text: '예상 매출액(원)'
                                 }
                             },
+                            tooltip: {
+                                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                                    '<td style="padding:0"><b>{point.y:.1f} 원</b></td></tr>',
+                                footerFormat: '</table>',
+                                shared: true,
+                                useHTML: true
+                            },
                             plotOptions: {
-                                line: {
-                                    dataLabels: {
-                                        enabled: true
-                                    },
-                                    enableMouseTracking: false
+                                column: {
+                                    pointPadding: 0.2,
+                                    borderWidth: 0
                                 }
                             },
                             series: [{
-                                name: '사용자',
-                                data:response.data.data
-                            }]
+                                name: '월별 예상 매출액',
+                                data: [49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+                        
+                            }/*, {
+                                name: 'New York',
+                                data: [83.6, 78.8, 98.5, 93.4, 106.0, 84.5, 105.0, 104.3, 91.2, 83.5, 106.6, 92.3]
+                        
+                            }*/]
                         });
                         for (var i = 0; i < response.data.data.length; ++i) {
                             $scope.sum += response.data.data[i];

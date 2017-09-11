@@ -29,6 +29,8 @@
                         -->
                         <input id="malwareTestButton" type="file" class="ng-hide" onchange="angular.element(this).scope().malwareTest(this)" aria-label="fileInput" name="malwareTestButton"></input>
                         <label for="malwareTestButton" class="md-button md-primary" ng-disabled="isDisableMalwareTestButton"><span ng-bind="malwareTestButtonMessage"></span></label>
+                        <md-button class="md-raised" ng-click="showCreateNewFolderDialog()">새 폴더</md-button>
+                        <md-button class="md-raised" ng-click="showMoveFileDialog()" ng-disabled="isNotSelectedExistFiles()">파일 이동</md-button>
                     </div>
                 </form>
             </div>

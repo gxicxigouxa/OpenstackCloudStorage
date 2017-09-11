@@ -1045,6 +1045,219 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             $scope.gridApi2.selection.clearSelectedRows();
         };
 
+        /*
+        var currentFolderPathForCreateFolder = "";
+        function setCurrentFolderPathForCreateFolder() {
+            currentFolderPathForCreateFolder = $scope.currentPath;
+        }
+        */
+
+        //폴더 생성에 관한 다이얼로그 및 컨트롤러 관련 함수.
+        $scope.showCreateNewFolderDialog = function(event) {
+            //setCurrentFolderPathForCreateFolder();
+            //templateUrl로 지정된 외부 html 파일을 dialog로 출력하고 이를 위한 Controller는
+            //controller로 지정된 함수를 사용.
+            $mdDialog.show({
+                controller: createNewFolderDialogController,
+                templateUrl: 'dialog/create_new_folder_dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: event,
+                clickOutsideToClose: true,
+                multiple: true,
+                scope: $scope,
+                preserveScope: true
+            });
+        };
+
+        function createNewFolderDialogController($scope, $mdDialog) {
+            $scope.newFolderName = "";
+            //$scope.currentPath = currentFolderPathForCreateFolder;
+            $scope.clickOkButton = function() {
+                $http({
+                    method: "POST",
+                    url: "/requestcreatefolder",
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath,
+                        "currentNewFolderName": $scope.newFolderName
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    $scope.existFilesGridData.data.push({
+                        "name": $scope.newFolderName,
+                        "lastUpdate": "만든 날짜(폴더)",
+                        "size": "폴더의 크기",
+                        "format": "폴더"
+                    });
+                    $scope.hide();
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+            };
+
+            //dialog 닫기.
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            //dialog 취소.
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+        };
+
+        var currentFolderPathForMoveFile = "";
+        var currentFileNameForMoveFile = "";
+        function setCurrentFolderPathForMoveFile() {
+            currentFolderPathForMoveFile = $scope.currentPath;
+        }
+
+        function setCurrentFileNameForMoveFile() {
+            currentFileNameForMoveFile = $scope.selectedExistFile[0].name;
+        }
+
+        //폴더 생성에 관한 다이얼로그 및 컨트롤러 관련 함수.
+        $scope.showMoveFileDialog = function(event) {
+            setCurrentFolderPathForMoveFile();
+            setCurrentFileNameForMoveFile();
+            //templateUrl로 지정된 외부 html 파일을 dialog로 출력하고 이를 위한 Controller는
+            //controller로 지정된 함수를 사용.
+            $mdDialog.show({
+                controller: moveFileDialogController,
+                templateUrl: 'dialog/move_file_dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: event,
+                clickOutsideToClose: true,
+                multiple: true
+            });
+        };
+
+        function moveFileDialogController($scope, $mdDialog) {
+            $scope.selectedPath;
+            $scope.lastSelectedItem;
+            var existFiles = [];
+            $scope.selectedExistPath = [];
+            $scope.currentPath = currentFolderPathForMoveFile;
+            $scope.currentFileName = currentFileNameForMoveFile;
+            console.log("현재 경로: " + $scope.currentPath);
+            console.log("옮기고자 하는 파일명: " +  $scope.currentFileName);
+            $scope.pathListGridData = {
+                //마우스로 grid에 보이는 데이터 선택 가능.
+                enableRowSelection: true,
+                //데이터 선택을 위해 따로 앞쪽에 checkbox 만들지 않음.
+                enableRowHeaderSelection: false,
+                //검색 가능.
+                enableFiltering: true,
+                //표시할 데이터.
+                data: 'pathListGridData.data',
+                //데이터 열 정의.
+                columnDefs: [{
+                    field: 'path',
+                    displayName: '경로'
+                }]
+            };
+            //여러 데이터 선택 불가.
+            $scope.pathListGridData.multiSelect = false;
+            //Ctrl, Shift를 누른 상태에서는 그에 맞는 다중 선택 불가.
+            $scope.pathListGridData.modifierKeysToMultiSelect = false;
+            //한번 더 선택하면 선택 취소 불가.
+            $scope.pathListGridData.noUnselect = false;
+            //grid에 대한 데이터 초기화.
+            $scope.pathListGridData.data = [];
+            //grid에 대한 callback 함수를 정의.
+            //특정 열이 선택됐을 때 그 열을 저장하도록 구성하여 선택한 파일 또는 폴더 구분 가능.
+            $scope.pathListGridData.onRegisterApi = function(gridApi) {
+                $scope.gridApi2 = gridApi;
+                gridApi.selection.on.rowSelectionChanged($scope, function(rows) {
+                    $scope.selectedExistPath = gridApi.selection.getSelectedRows();
+                    if ($scope.selectedExistPath.length != 0) {
+                        $scope.lastSelectedItem = $scope.selectedExistPath[$scope.selectedExistPath.length - 1];
+                        console.log("선택된 경로: " + $scope.selectedExistPath[$scope.selectedExistPath.length - 1].path);
+                        $scope.selectedPath = $scope.selectedExistPath[$scope.selectedExistPath.length - 1];
+                    }
+                });
+                gridApi.selection.on.rowSelectionChangedBatch($scope, function(rows) {
+                    $scope.selectedExistPath = gridApi.selection.getSelectedRows();
+                });
+            };
+            //메인 화면에서 매개 변수로 전달하는 특정 폴더를 더블클릭할 때의 동작을 결정하기 위한 함수.
+            //해당 폴더에 대한 다이얼로그가 나타나도록 구성.
+            $scope.onDblClickRow = function(row) {
+                console.log("무언가 더블클릭됨");
+                console.log($scope.lastSelectedItem);
+                console.log($scope.selectedPath);
+                if ($scope.lastSelectedItem == $scope.selectedPath) {
+                    console.log("경로 " + $scope.selectedPath.path + "이(가) 더블클릭됨.");
+                    $scope.changeFolder();
+                }
+            };
+            console.log("경로 목록 요청 시작");
+            $http({
+                method: "POST",
+                url: "/storagefilemove",
+                data: {
+                }
+            }).then(function successCallback(response) {
+                console.log("success: ");
+                console.log("받은 데이터:");
+                console.log(response);
+    
+                for (var i = 0; i < response.data.pathList.length; ++i) {
+                    $scope.pathListGridData.data.push( {"path":response.data.pathList[i]});
+                }
+                
+            }, function errorCallback(response) {
+                console.log("error: " + response);
+            });
+            console.log("경로 목록 요청 끝");
+
+            //파일 grid에 대해 선택된 열이 없는지를 판단.        
+            $scope.isNotSelectedPath = function() {
+                if ($scope.selectedExistPath.length == 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            //TODO.
+            $scope.clickSelectButton = function() {
+                $http({
+                    method: "POST",
+                    url: "/requestmovefile",
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFileName": $scope.currentFileName,
+                        "currentFolderPath": $scope.currentPath,
+                        "targetFolderPath": $scope.selectedPath.path
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    $scope.hide();
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+            };
+
+            //dialog 닫기.
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            //dialog 취소.
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+        };
+
         //Toast 메시지의 위치를 결정하기 위한 함수.
         function sanitizePosition() {
             var current = $scope.toastPosition;
@@ -1410,7 +1623,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.createNewFolder = function() {
             $http({
                 method: "POST",
-                url: "/requestcreatefolder",
+                url: "/requestcreatefolderfortextcompare",
                 data: {
                     "currentUserId": currentUserId,
                     "currentUserToken": currentUserToken,

@@ -1,0 +1,31 @@
+<md-dialog aria-label="moveFileDialogContent" class="folder-content-container">
+    <div class="md-toolbar-tools">
+        <h2>
+            이동할 경로 선택
+        </h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="move_file_dialog-header">
+            </div>
+            <div class="move_file_dialog-container">
+                <div ui-grid="pathListGridData" ui-grid-selection ui-grid-move-columns ui-grid-resize-columns ng-dblclick="onDblClickRow(row)" class="grid"></div>
+            </div>
+            <div class="moveFile_dialog-button">
+                <md-button class="md-raised md-warn" ng-click="clickSelectButton()" ng-disabled="isNotSelectedPath()">선택</md-button>
+            </div>
+            <!--
+            <div class="malware_file_list_dialog-waiting-signal" layout="row" ng-hide="!isWaitingStatus">
+                <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+                <p>잠시만 기다려 주세요...</p>
+            </div>
+        -->
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

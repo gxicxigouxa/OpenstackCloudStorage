@@ -1,0 +1,26 @@
+<md-dialog aria-label="clusterInitDialogContent" class="cluster-init-content-container">
+    <div class="md-toolbar-tools">
+        <h2></h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancelClusterInitDialog">
+            X
+        </md-button>
+    </div>
+    <md-dialog-content>
+        <div class="md-dialog-content">
+            <div class="cluster-init-dialog-header">
+            </div>
+            <div class="cluster_init_dialog-container" layout-gt-xs="row">
+                <md-input-container class="md-block" flax-gt-xs>
+                    <label>클러스터 갯수 입력</label>
+                    <input ng-model="numberOfCluster">
+                </md-input-container>
+            </div>
+            <div class="cluster_init_dialog-button">
+                <md-button ng-click="clickConfirmButton()">확인</md-button>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+    </md-dialog-actions>
+</md-dialog>

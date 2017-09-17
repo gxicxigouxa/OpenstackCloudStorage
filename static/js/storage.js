@@ -1132,11 +1132,11 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                 parent: angular.element(document.body),
                 targetEvent: event,
                 clickOutsideToClose: true,
-                multiple: true
+                multiple: true,
             });
         };
 
-        function moveFileDialogController($scope, $mdDialog) {
+        function moveFileDialogController($scope, $scope, $mdDialog) {
             $scope.selectedPath;
             $scope.lastSelectedItem;
             var existFiles = [];
@@ -1240,6 +1240,13 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("success: ");
                     console.log("받은 데이터:");
                     console.log(response);
+                    //이부분 테스트 필요.
+                    /*
+                    angular.forEach($scope.gridApi2.selection.getSelectedRows(), function(data, index) {
+                        $scope.existFilesGridData.data.splice($scope.existFilesGridData.data.lastIndexOf(data), 1);
+                    });
+                    $scope.gridApi2.selection.clearSelectedRows();
+                    */
                     $scope.hide();
                 }, function errorCallback(response) {
                     console.log("error: ");
@@ -1324,12 +1331,14 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
     function autoClassifiedListDialogController($scope, $mdDialog) {
         $scope.containerName = selectedFolderName;
         $scope.isAutoClassification = false;
+        $scope.isInitAutoClassification = false;
         $scope.currentPath = "textcompare";
         $scope.selectedFolder;
         $scope.lastSelectedItem;
         var existFiles = [];
         $scope.selectedExistFile = [];
         $scope.isClickedNewFolderButton = false;
+        $scope.isEmptyFileList = false;
         $scope.newFolderName = "";
         $scope.hiddenUserId = currentUserId;
         $scope.existFilesGridData = {
@@ -1431,6 +1440,11 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     for (var i = 0; i < response.data.files.length; ++i) {
                         $scope.existFilesGridData.data.push(response.data.files[i]);
                     }
+                    if ($scope.existFilesGridData.data.length == 0) {
+                        $scope.isEmptyFileList = true;
+                    } else {
+                        $scope.isEmptyFileList = false;
+                    }
                     console.log("현재 경로: " + $scope.currentPath);
                 }, function errorCallback(response) {
                     console.log("error: " + response);
@@ -1513,6 +1527,9 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             var selectedFiles = element.files;
             //선택된 파일의 갯수.
             var numberOfSelectedFiles = selectedFiles.length;
+            console.log("업로드할 파일: ");
+            console.log(selectedFiles);
+            console.log("업로드할 파일의 갯수 : " + numberOfSelectedFiles);
             //파일의 갯수만큼 출력할 grid의 형식에 맞게 데이터 추가하고 업로드할 파일에 추가.
             /*
             for (var i = 0; i < numberOfSelectedFiles; ++i) {
@@ -1526,25 +1543,25 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             }
             */
             //grid 갱신.
-            $scope.$apply();
             $scope.uploadSelectedFiles();
+            $scope.$apply();
         };
 
         //업로드하고자 하는 파일을 실제로 서버에 저장하기 위한 함수.
         //$scope.fileChanged(element) 내에서 호출.
         $scope.uploadSelectedFiles = function() {
-            
             var obj;
             var fileName;
             var extName;
             
             // 파일을 업로드 한다.
             if ($scope.isAutoClassification) {
-                var uploadFile = document.getElementById("fileClassificationButton")
+                var uploadFile = document.getElementById("fileClassificationButton");
+            } else if ($scope.isInitAutoClassification) {
+                var uploadFile = document.getElementById("fileInitClassificationButton");
             } else {
-                var uploadFile = document.getElementById("fileUploadButton")
+                var uploadFile = document.getElementById("fileUploadButton");
             }
-            
             
             obj = document.actFrm.upFile;
             if (obj.value != "") {
@@ -1557,7 +1574,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             console.log("uploadFile.files:");
             console.log(uploadFile.files);
             
-            if (!$scope.isAutoClassification) {
+            if (!$scope.isAutoClassification && !scope.isInitAutoClassification) {
                 console.log("파일 업로드 요청 시작(일반)");
                 Upload.upload({
                     url: "/requestfileupload",
@@ -1582,10 +1599,10 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log(response);
                 });
                 console.log("파일 업로드 요청 끝(일반)");
-            } else {
+            } else if ($scope.isAutoClassification) {
                 console.log("파일 업로드 요청 시작(자동분류)");
                 Upload.upload({
-                    url: "/textcompare",
+                    url: "/textcompare2",
                     file: uploadFile.files,
                     data: {
                         "currentUserId": currentUserId,
@@ -1601,8 +1618,63 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log(response);
                 });
                 console.log("파일 업로드 요청 끝(자동분류)");
+            } else {
+                console.log("...");
             }
+            $scope.isAutoClassification = false;
+            $scope.isInitAutoClassification = false;
         };
+
+        $scope.showClusterInitDlalog = function() {
+            $mdDialog.show({
+                controller: clusterInitDialogController,
+                templateUrl: 'dialog/cluster_init_dialog.html',
+                parent: angular.element(document.body),
+                targetEvent: event,
+                clickOutsideToClose: true,
+                multiple: true,
+                scope: $scope,
+                preserveScope: true
+            });
+        };
+
+        function clusterInitDialogController($scope, $mdDialog) {
+            numberOfCluster = 0;
+            $scope.clickConfirmButton = function() {
+
+                console.log("파일 업로드 요청 시작(초기분류)");
+                console.log(numberOfCluster);
+                $http({
+                    method: "POST",
+                    url: "/requestinitcluster",
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": "textcompare",
+                        "currentNumberOfCluster": numberOfCluster
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    $scope.hideClusterInitDialog();
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+                console.log("파일 업로드 요청 끝(초기분류)");
+            };
+
+            //dialog 닫기.
+            $scope.hideClusterInitDialog = function() {
+                $mdDialog.hide();
+            };
+
+            //dialog 취소.
+            $scope.cancelClusterInitDialog = function() {
+                $mdDialog.cancel();
+            };
+        }
 
         $scope.fileChangedByClassificationButton = function(element) {
             $scope.isAutoClassification = true;
@@ -1611,6 +1683,11 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
 
         $scope.fileChangedByUploadButton = function(element) {
             $scope.isAutoClassification = false;
+            $scope.fileChanged(element);
+        };
+
+        $scope.fileChangedByInitClassificationButton =function(element) {
+            $scope.isInitAutoClassification = true;
             $scope.fileChanged(element);
         };
 
@@ -1910,6 +1987,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     xhr.send();
                     selected_length = selectedRow.length;
                     */
+                    
                     $scope.gridOptions.data.splice($scope.gridOptions.data.lastIndexOf(data), 1);
                     //TODO. 컨테이너 삭제에 대한 동작 구현.
                 });

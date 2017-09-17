@@ -53,6 +53,16 @@ from pptx import Presentation
 import requests
 from time import sleep
 import datetime
+from konlpy.tag import Twitter
+from konlpy.utils import pprint
+import sklearn
+import nltk
+#from nltk.book import *
+import math
+import re
+from sklearn.cluster import KMeans
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 #-*- coding: utf-8 -*-
 
 mystopword = frozenset([
@@ -1098,6 +1108,409 @@ def requestpayment():
 		currentPaymentDay = data["currentPaymentDay"]
 		return jsonify(requestPayment(currentUserId, currentUserPassword, currentPaymentDay))
 
+folder_file_count = list()
+file_noun_list = list()
+regex = r'[가-힣]+'
+choosen_folder_path = {}
+# 파일 개수 
+
+@app.route('/textcompare2', methods = ['POST'])
+def textcompare2():
+	if request.method =='POST':
+		#currentUserId = "testuser"
+		twitter=Twitter()
+		upload_contents=''
+		
+		uploaded_files = list(request.files.values())
+		print("request.form['currentUserId']")
+		print(request.form["currentUserId"])
+		currentUserId = request.form["currentUserId"]
+		currentUserToken = request.form["currentUserToken"]
+		print("UserId: " + currentUserId)
+		print("request.files: ")
+		print(request.files)
+		print("uploaded_files: ")
+		print (uploaded_files)
+
+		path_dir = '/home/gxicxigouxa/myproject/users/' + currentUserId + '/textcompare'
+		print("length of up~")
+		print(len(uploaded_files))
+		if len(uploaded_files)>10:
+		
+			for file in uploaded_files:		
+				if file and allowed_file(file.filename):
+					upload_contents_list=list()
+
+					filename = file.filename
+				
+					file.save(os.path.join(path_dir, filename))
+			
+
+					ext = filename.split('.')
+					
+					if ext[-1]=='txt':
+						f= open(path_dir+'/'+filename,'r')
+						upload_contents=f.read()
+						
+						f.close()
+					elif ext[-1]=='docx':
+						docx_content = docx2txt.process(path_dir+'/'+filename)
+						upload_contents=docx_content
+					elif  ext[-1]=='pptx':
+						prs =Presentation(path_dir+'/'+filename)
+						for slide in prs.slides:
+							for shape in slide.shapes:
+								if not shape.has_text_frame:
+									continue
+								for paragraph in shape.text_frame.paragraphs:
+									for run in paragraph.runs:
+										upload_contents+=run.text+ ' '
+						
+					else :
+						return "no available file extension"+ '  '+str(ext[-1])
+					#print(upload_contents)
+					#print(twitter.nouns(upload_contents))
+					#if (twitter.nouns(upload_contents)!= '[]'):
+						
+					for word in twitter.nouns(upload_contents):
+						upload_contents_list.append(word)
+						
+					r = re.sub(regex,"",upload_contents)
+					tokens = nltk.word_tokenize(r)
+					tagged = nltk.pos_tag(tokens)
+					for item in tagged:
+						if item[1][0]=='N':
+							upload_contents_list.append(item[0].lower())
+					
+					#else:
+						#print(tw)
+				else:
+					return "not allowed ext"
+
+				print(upload_contents_list)
+				max = -9999999
+				index = 0
+				# 한 파일에 대하여 명사로 어근 추룰 리스트를 가지고 있음 
+				file_sum=0
+				data=list()
+				data = read_data("/home/gxicxigouxa/myproject/users/" + currentUserId + "/textcompare")
+				#print(len(data))
+				#print(choosen_folder_path)
+				#input_vector= upload_data("/home/gxicxigouxa/machinetest.txt")
+				frequency_list = list()
+			
+				for i in range(len(data)):
+					frequency_list.append(frequency(upload_contents_list,data[i]))
+		
+				# 유일 단어 갯수 
+				v= len(list(set(file_noun_list)))
+				# 폴더 갯수 
+				folder_num = len(data)
+				# 파일 개수 
+		
+				for i in folder_file_count :
+					file_sum = file_sum+len(i)
+		
+				for i in range(len(data)) :
+					compare = Log_laplace_probability(upload_contents_list,data[i],frequency_list[i],v,len(folder_file_count[i]),file_sum)
+					if compare > max :				
+						max = compare
+						index = i
+				print(index)
+				print(choosen_folder_path[index])
+
+				if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation			
+					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+filename)
+					print(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+filename)
+					cuttedMost = choosen_folder_path[index].split(path_dir + "/")
+					print("cuttedMost: ")
+					print(cuttedMost)
+					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation"
+					print("file name: " + filename)
+					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+					response = requests.put(url + '/' + filename, file, headers=headers)
+					print(url + '/' + filename)
+					print(response.text)
+				else:
+					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+filename)
+					cuttedMost = choosen_folder_path[index].split(path_dir + "/")
+					print("cuttedMost: ")
+					print(cuttedMost)
+					#cuttedMost[1]
+					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1]
+					print(url)
+					print("file name: " + filename)
+					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+					response = requests.put(url + '/' + filename, file, headers=headers)
+					print(url + '/' + filename)
+					print(response.text)
+
+		else:
+			filenames=[]
+			dir_list=[]
+			print("knn")
+			english_stemmer = nltk.stem.SnowballStemmer('english')
+			class StemmedTfidfVectorizer(TfidfVectorizer):
+				def build_analyzer(self):
+					analyzer = super(TfidfVectorizer,self).build_analyzer()
+					return lambda doc:(english_stemmer.stem(w) for w in analyzer(doc))
+			vectorizer = StemmedTfidfVectorizer(min_df=2,max_df=0.5,stop_words='english',decode_error='ignore')			
+			upload_contents_list=list()
+			for file in uploaded_files:		
+				if file and allowed_file(file.filename):
+					
+
+					filename = file.filename
+					filenames.append(filename)
+					file.save(os.path.join(path_dir, filename))
+					upload_contents=""
+
+					ext = filename.split('.')
+					
+					if ext[-1]=='txt':
+						f= open(path_dir+'/'+filename,'r')
+						upload_contents=f.read()
+
+						f.close()
+					elif ext[-1]=='docx':
+						docx_content = docx2txt.process(path_dir+'/'+filename)
+						upload_contents=docx_content
+					elif  ext[-1]=='pptx':
+						prs =Presentation(path_dir+'/'+filename)
+						for slide in prs.slides:
+							for shape in slide.shapes:
+								if not shape.has_text_frame:
+									continue
+								for paragraph in shape.text_frame.paragraphs:
+									for run in paragraph.runs:
+										upload_contents+=run.text+ ' '
+					else :
+						return "no available file extension"+ '  '+str(ext[-1])
+
+				else:
+					return "not allowed ext"
+				
+				###--------------------------parsing only directory (not file)-----------------------------------------
+				for file in os.listdir(path_dir):
+					if os.path.isdir(path_dir+'/'+file):
+						dir_list.append(path_dir+'/'+file)
+				print("before")
+				print(str(dir_list))
+				dir_list.sort() #why did i do this ?
+				print("after")
+				print(str(dir_list))
+				
+				###--------------------------parsing only directory (not file)-------------------------------------------
+				
+				
+				total_score=[]
+				total_content=[]
+				#same index with dir_list
+				
+
+
+				#vectorizer = CountVectorizer(min_df=1)
+				vectorizer = StemmedTfidfVectorizer(min_df=2,max_df=0.5,stop_words='english',decode_error='ignore')		
+				#parsing the all content in the test file not in the presentation file  pptxfile is in the another paht (ex > not /test1   /test1/presentation)
+				for i in range(len(dir_list)):
+					for file in os.listdir(dir_list[i]):
+					
+						if os.path.isfile(dir_list[i]+'/'+file):	# if it is file 
+							ext =file.split('.')
+							if ext[-1]=='txt':
+								f= open(dir_list[i]+'/'+file)
+								total_content.append(f.read())
+							if ext[-1]=='docx':
+								total_content.append(docx2txt.process(dir_list[i]+'/'+file))
+
+						else:# if it is directory
+							continue			
+				#parsing the all content
+
+
+				train_data = total_content				
+				vectorized=vectorizer.fit_transform(train_data)
+				num_samples,num_features=vectorized.shape				
+				num_clusters=len(dir_list)#폴더 개수 받아서 적으면 될듯
+				km   = KMeans(n_clusters=num_clusters, n_init=1, verbose=1, random_state=3)
+				clusterd = km.fit(vectorized)
+				labelset= set(km.labels_)
+				print(str(labelset)) 
+				new_post=upload_contents
+				new_post_vec = vectorizer.transform([new_post])
+				new_post_label = km.predict(new_post_vec)[0]
+				print(str(new_post_label))
+
+				similar_indices = (km.labels_==new_post_label).nonzero()[0]
+				print("similar indices")
+				print(similar_indices)
+				similar=[]
+				dist_similar_indices = []
+				for i in similar_indices:
+					dist = sp.linalg.norm((new_post_vec - vectorized[i]).toarray())
+					similar.append((dist,train_data[i]))
+					dist_similar_indices.append((dist, i))
+
+				similar = sorted(similar)	
+				dist_sorted_similar_content_index = sorted(dist_similar_indices)
+				for i in range(len(similar)):
+					print("similiar")
+					print(similar[i])
+					#print(dist_sorted_similar_content_index)
+				
+				best_i = dist_sorted_similar_content_index[0][1]
+				print(best_i)
+				dir_file_num=[]
+				# directory's number of files!
+				sum=0
+				for i in range(len(dir_list)):
+					dir_file_num.append(num_only_file(dir_list[i]))#do not count the  directory , just file count(because of presentation)				
+				for i in range(len(dir_file_num)):
+					sum+=dir_file_num[i] 
+					if(sum>=best_i+1):
+						closest_location=i
+						break				
+			
+
+				most= dir_list[closest_location]
+				print(str(most))#/home/gxicxigouxa/myproject/users/testuser/textcompare/database
+
+				if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation			
+					shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+					print(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+					cuttedMost = most.split(path_dir + "/")
+					print("cuttedMost: ")
+					print(cuttedMost)
+					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation"
+					print("file name: " + filename)
+					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+					response = requests.put(url + '/' + filename, file, headers=headers)
+					print(url + '/' + filename)
+					print(response.text)
+				else:
+					shutil.move(path_dir+'/'+filename,most+"/"+filename)
+					cuttedMost = most.split(path_dir + "/")
+					print("cuttedMost: ")
+					print(cuttedMost)
+					#cuttedMost[1]
+					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1]
+					print(url)
+					print("file name: " + filename)
+					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
+					response = requests.put(url + '/' + filename, file, headers=headers)
+					print(url + '/' + filename)
+					print(response.text)
+				
+				
+					
+		return "ok"
+		
+def upload_data(file_path):
+	twitter_obj = Twitter()
+	data = list()
+	f = open(file_path)
+	lines = f.readlines()
+	lines = list(map(lambda s: s.strip(),lines))
+	for i in lines:
+		if i =="":
+			continue
+		else:
+			for a in twitter_obj.nouns(i):
+				data.append(a)
+			r=re.sub(regex,"",i)
+			tokens = nltk.word_tokenize(r)
+			tagged = nltk.pos_tag(tokens)
+			for item in tagged:
+				#print(item)
+				if item[1][0]=='N':
+					data.append(item[0].lower())
+								
+	return data
+
+def read_data(folder_path):
+	data=list() # 폴더마다 명사로 어근 추출 리스트를 가지고 있음 data[0]에는 첫번째 폴더 모든 파일에 대한 어근이 리스트로 있음
+	twitter_obj = Twitter()
+	imsi=list()
+	content = list()
+	count=0
+	for root,dirs, files in os.walk(folder_path):
+		if root != folder_path :
+			for fname in files:
+				full_fname = os.path.join(root,fname)
+				ext = fname.split('.')
+				if ext[-1]=='txt':
+					f = open(full_fname)
+					content = f.read()
+				elif ext[-1]=='docx':
+					content=docx2txt.process(full_fname)
+				else:
+					continue
+				for parsed_list in twitter_obj.nouns(content) :		
+					file_noun_list.append(parsed_list)
+					imsi.append(parsed_list)
+
+					
+				r=re.sub(regex,"",content)
+				tokens = nltk.word_tokenize(r)
+				tagged = nltk.pos_tag(tokens)
+				#print(tagged)
+				for item in tagged:
+					#print(item)
+					if item[1][0]=='N':
+						file_noun_list.append(item[0])
+						imsi.append(item[0].lower())
+			
+			if len(imsi) != 0:
+				data.append(imsi)
+				
+				choosen_folder_path[count]=root
+				count=count+1
+				folder_file_count.append(files)
+			imsi=list()			
+	return data
+
+def frequency(input_vector, trained_vector):
+	frequency=dict()
+	
+	for words in input_vector: # dict 초기화 
+		frequency[words] = 0
+	#print(frequency)
+	for word in trained_vector:
+		if word in input_vector:
+			
+			frequency[word] += 1
+				#print(word)			
+	return frequency
+#print(data[0])
+
+
+# v는 유일 단어 갯수 , trained_vector 단일 
+# n 은 폴더 내 파일 갯수 
+def Log_laplace_probability(input_vector,trained_vector,frequency,v,n,file_num):	 
+	denominator = v + len(trained_vector)
+	probability = 0
+	for word in input_vector:
+		probability = probability + math.log((frequency[word]+1)/(denominator))
+	probability = probability + math.log(n/file_num)
+	return probability
+
+#클러스터 초기화 요청.
+def requestInitCluster(userId, userToken, folderPath, numberOfCluster):
+	print(userId)
+	print(userToken)
+	print(folderPath)
+	print(numberOfCluster)
+	return "OK"
+@app.route('/requestinitcluster', methods = ['POST'])
+def requestinitcluster():
+	if request.method == 'POST':
+		data = request.get_json()
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentNumberOfCluster = data["currentNumberOfCluster"]
+		return jsonify(requestInitCluster(currentUserId, currentUserToken, currentFolderPath, currentNumberOfCluster))
+	
 @app.route('/textcompare',methods=['POST'])#post with javascript code!!!
 #파일을 받아 각 폴더 내부에 있는 파일의 유사도를 분석하여 해당 파일과 가장 알맞는 폴더를 찾아 이동시킨다.
 #분류 대상은 텍스트(.txt), MS word(.docx), MS powerpoint(.pptx)이며, 이외에는 분류하지 않고 현재 디렉토리에 저장.
@@ -1147,6 +1560,7 @@ def textcompare():
 				if ext[-1]=='txt':
 					f= open(path_dir+'/'+filename,'r')
 					upload_contents=f.read()
+
 					f.close()
 				elif ext[-1]=='docx':
 					docx_content = docx2txt.process(path_dir+'/'+filename)
@@ -1633,6 +2047,71 @@ def textcomparefilemove():
 	
 	#return str(ALL_PATH)
 	return jsonify({"pathList":ALL_PATH})
+english_stemmer = nltk.stem.SnowballStemmer('english')
+class StemmedTfidfVectorizer(TfidfVectorizer):
+	def build_analyzer(self):
+		analyzer = super(TfidfVectorizer,self).build_analyzer()
+		return lambda doc:(english_stemmer.stem(w) for w in analyzer(doc))
+	
+@app.route('/knn',methods =['POST'])
+def makingtrainingdata():
+		
+	if request.method =='POST':
+		vectorizer = StemmedTfidfVectorizer(min_df=2,max_df=0.5,stop_words='english',decode_error='ignore')
+		upload_contents=''
+		uploaded_files = list(request.files.values())
+		print("request.form['currentUserId']")
+		print(request.form["currentUserId"])
+		currentUserId = request.form["currentUserId"]
+		currentUserToken = request.form["currentUserToken"]
+		print("UserId: " + currentUserId)
+		print("request.files: ")
+		print(request.files)
+		print("uploaded_files: ")
+		print (uploaded_files)
+		path_dir = '/home/gxicxigouxa/myproject/users/' + currentUserId + '/textcompare'
+		upload_contents_list=list()
+		for file in uploaded_files:		
+			if file and allowed_file(file.filename):
+				
+
+				filename = file.filename
+			
+				file.save(os.path.join(path_dir, filename))
+		
+
+				ext = filename.split('.')
+				
+				if ext[-1]=='txt':
+					f= open(path_dir+'/'+filename,'r')
+					upload_contents=f.read()
+					
+					f.close()
+				elif ext[-1]=='docx':
+					docx_content = docx2txt.process(path_dir+'/'+filename)
+					upload_contents=docx_content
+				elif  ext[-1]=='pptx':
+					prs =Presentation(path_dir+'/'+filename)
+					for slide in prs.slides:
+						for shape in slide.shapes:
+							if not shape.has_text_frame:
+								continue
+							for paragraph in shape.text_frame.paragraphs:
+								for run in paragraph.runs:
+									upload_contents+=run.text+ ' '
+				
+			
+				else :
+					return "no available file extension"+ '  '+str(ext[-1])
+				upload_contents_list.append(upload_contents)
+				train_data = upload_contents_list
+				vectorized=vectorizer.fit_train(train_data)
+				
+
+		print(str(upload_contents_list))
+
+
+		return "ok"
 
 @app.route('/storagefilemove',methods=['POST','GET'])
 def storagefilemove():
@@ -1663,6 +2142,13 @@ def storagefilemove():
 
 	
 	return jsonify({"pathList":ALL_PATH})
-	#return str(ALL_PATH)	
+	#return str(ALL_PATH)
+
+
+
+
+
+
+
 if __name__ =='__main__':
    app.run(host='0.0.0.0',port=9999)	

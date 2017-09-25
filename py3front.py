@@ -1,33 +1,4 @@
-'''
-py3front.py
-세부정보
-활동
-공유 정보
-공유되지 않음
-일반 정보
-유형
-텍스트
-크기
-26KB (26,627바이트)
-사용된 저장용량
-26KB (26,627바이트)
-위치
-06/29
-소유자
-나
-수정한 날짜
-2017. 6. 30., 나
-열어본 날짜
-오후 2:12, 나
-2017. 6. 30.에 Google Drive Web
-(으)로
-작성됨
-설명
-설명 추가
-다운로드 권한
-뷰어가 다운로드할 수 있음
-모든 항목이 선택취소되었습니다. 모든 항목이 선택취소되었습니다.
-'''
+
 import csv
 import scipy as sp
 #import matplotlib.pyplot as plt
@@ -53,6 +24,7 @@ from pptx import Presentation
 import requests
 from time import sleep
 import datetime
+#from  datetime import datetime
 from konlpy.tag import Twitter
 from konlpy.utils import pprint
 import sklearn
@@ -62,6 +34,7 @@ import math
 import re
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import silhouette_samples, silhouette_score
 
 #-*- coding: utf-8 -*-
 
@@ -464,7 +437,7 @@ def scan_file(APIKEY, files):
 			return scan_response
 		elif(scan_response['response_code']==-2):
 			print("Wait For 30 sec")
-			time.sleep(30)
+			sleep(30)
 			continue
 			
 		elif(scan_response['response_code']==-1):
@@ -507,7 +480,7 @@ def report_file(APIKEY,Resource):
 			
 		elif(json_response['response_code'] == -2):
 			print("Still Analysis.... Wait for 20 sec")
-			time.sleep(20)
+			sleep(20)
 			continue
 		elif(scan_response['response_code']==-1):
 			print("ERROR")
@@ -1120,12 +1093,19 @@ def textcompare2():
 		#currentUserId = "testuser"
 		twitter=Twitter()
 		upload_contents=''
-		
+		now = datetime.datetime.now()
+		cur_time = ""
+		#형식: 2017Y9M26D 1:1
+		cur_time = '['+str(now.year)+'Y'+str(now.month)+'M'+str(now.day)+'D '+str(now.hour)+':'+str(now.minute)+']'
+		#형식: 2017-09-26 01:08
+		#cur_time = "[" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + "]"
 		uploaded_files = list(request.files.values())
 		print("request.form['currentUserId']")
 		print(request.form["currentUserId"])
 		currentUserId = request.form["currentUserId"]
 		currentUserToken = request.form["currentUserToken"]
+		isClassifiedByDate = request.form["currentClassifiedByDateFlag"]
+		print(isClassifiedByDate)
 		print("UserId: " + currentUserId)
 		print("request.files: ")
 		print(request.files)
@@ -1375,8 +1355,22 @@ def textcompare2():
 				most= dir_list[closest_location]
 				print(str(most))#/home/gxicxigouxa/myproject/users/testuser/textcompare/database
 
+				
+
 				if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation			
-					shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
+					
+					if (isClassifiedByDate=='true'):
+						date_filename =cur_time+ filename 
+						print("date true")
+					else:
+						date_filename=filename	
+					
+					print("-------------------------------------------")
+					print(date_filename)
+					print(filename)		
+					shutil.move(path_dir+'/'+filename,most+"/"+"presentation/"+date_filename)
+					print("*********************************************")
+					print(date_filename)
 					print(path_dir+'/'+filename,most+"/"+"presentation/"+filename)
 					cuttedMost = most.split(path_dir + "/")
 					print("cuttedMost: ")
@@ -1384,11 +1378,18 @@ def textcompare2():
 					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation"
 					print("file name: " + filename)
 					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
-					response = requests.put(url + '/' + filename, file, headers=headers)
+					response = requests.put(url + '/' +date_filename, file, headers=headers)
 					print(url + '/' + filename)
 					print(response.text)
 				else:
-					shutil.move(path_dir+'/'+filename,most+"/"+filename)
+					if (isClassifiedByDate=='true'):
+						date_filename =cur_time+ filename
+					else:
+						date_filename=filename
+					print("이름 확인")
+					print(path_dir+'/'+filename)
+					print(most+"/"+date_filename)
+					shutil.move(path_dir+'/'+filename,most+"/"+date_filename)
 					cuttedMost = most.split(path_dir + "/")
 					print("cuttedMost: ")
 					print(cuttedMost)
@@ -1397,8 +1398,8 @@ def textcompare2():
 					print(url)
 					print("file name: " + filename)
 					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
-					response = requests.put(url + '/' + filename, file, headers=headers)
-					print(url + '/' + filename)
+					response = requests.put(url + '/' + date_filename, file, headers=headers)
+					print(url + '/' + date_filename)
 					print(response.text)
 				
 				
@@ -1500,16 +1501,132 @@ def requestInitCluster(userId, userToken, folderPath, numberOfCluster):
 	print(userToken)
 	print(folderPath)
 	print(numberOfCluster)
+
+
+	
 	return "OK"
 @app.route('/requestinitcluster', methods = ['POST'])
 def requestinitcluster():
 	if request.method == 'POST':
-		data = request.get_json()
-		currentUserId = data["currentUserId"]
-		currentUserToken = data["currentUserToken"]
-		currentFolderPath = data["currentFolderPath"]
-		currentNumberOfCluster = data["currentNumberOfCluster"]
-		return jsonify(requestInitCluster(currentUserId, currentUserToken, currentFolderPath, currentNumberOfCluster))
+		
+		uploaded_files = list(request.files.values())
+		print("request.form['currentUserId']")
+		print(request.form["currentUserId"])
+		currentUserId = request.form["currentUserId"]
+		currentUserToken = request.form["currentUserToken"]
+		currentNumberOfCluster = request.form["currentNumberOfCluster"]
+		path_dir = '/home/gxicxigouxa/myproject/users/' + currentUserId + '/textcompare'
+		print("UserId: " + currentUserId)
+		print("NumberOfCluster: " + currentNumberOfCluster)
+		print("request.files: ")
+		print(request.files)
+		print("uploaded_files: ")
+		print (uploaded_files)
+
+
+
+		filenames=[]
+		dir_list=[]		
+		english_stemmer = nltk.stem.SnowballStemmer('english')
+		class StemmedTfidfVectorizer(TfidfVectorizer):
+			def build_analyzer(self):
+				analyzer = super(TfidfVectorizer,self).build_analyzer()
+				return lambda doc:(english_stemmer.stem(w) for w in analyzer(doc))
+				
+		vectorizer = StemmedTfidfVectorizer(min_df=1,max_df=0.5,stop_words='english',decode_error='ignore')			
+		total_content=[]
+		total_filename=[]
+		for file in uploaded_files:		
+			if file and allowed_file(file.filename):
+				
+
+				filename = file.filename
+				filenames.append(filename)
+				file.save(os.path.join(path_dir, filename))
+				upload_contents=""
+
+				ext = filename.split('.')
+				
+				if ext[-1]=='txt':
+					f= open(path_dir+'/'+filename,'r')
+					upload_contents=f.read()
+
+					f.close()
+				elif ext[-1]=='docx':
+					docx_content = docx2txt.process(path_dir+'/'+filename)
+					upload_contents=docx_content
+				elif  ext[-1]=='pptx':
+					prs =Presentation(path_dir+'/'+filename)
+					for slide in prs.slides:
+						for shape in slide.shapes:
+							if not shape.has_text_frame:
+								continue
+							for paragraph in shape.text_frame.paragraphs:
+								for run in paragraph.runs:
+									upload_contents+=run.text+ ' '
+				
+				else :
+					return "no available file extension"+ '  '+str(ext[-1])
+
+				total_content.append(upload_contents);
+				total_filename.append(filename)
+			else:
+				return "not allowed ext"
+
+		print(total_content)
+		posts =total_content
+		range_n_cluster=[]		
+		train_data=posts
+		vectorized=vectorizer.fit_transform(train_data)
+		num_samples,num_features = vectorized.shape
+		print ("ok")
+		if len(posts)<=3:
+			num_clusters = len(posts)
+		else:	
+			print("else")
+			for i in range(len(posts)-2):
+				range_n_cluster.append(i+2);
+			print(range_n_cluster)	
+			best_k=1;
+			best_sil=0;
+			for num_clusters in range_n_cluster:
+				clusters  = KMeans(n_clusters=num_clusters, n_init=1, verbose=1, random_state=3)
+				cluster_labels=cluster.fit_predict(vectorized)
+				silhouette_avg = silhouette_score(vectorized,cluster_labels)
+				print("n_clustsers =",num_clusters, "The avg silscore : ", silhouette_avg)
+				if best_sil<silhouette_avg:
+					best_k = num_clusters
+					best_sil=silhouette_avg
+
+			num_clusters = best_k
+		print(num_clusters)		
+		print(total_filename)
+		
+		km  = KMeans(n_clusters=num_clusters, n_init=1, verbose=1, random_state=3)
+		clusterd = km.fit(vectorized)
+		print(km.labels_)
+		label_set = set(km.labels_)
+		for i in range(len(label_set)):
+			if not os.path.exists("/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified["+str(i)+"]"):	
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified["+str(i)+"]")
+				os.mkdir("/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified["+str(i)+"]/presentation/")
+				print("/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified"+str(i) + " success.")
+				
+				requestCreateFolder(currentUserId, currentUserToken, "textcompare", "classified["+str(i)+"]")
+				requestCreateFolder(currentUserId, currentUserToken, "textcompare", "classified["+str(i)+"]/presentation")
+		for i in range(len(km.labels_)):#ᅟex> [0112201~~]
+			for j in range(len(label_set)):#labelset ex> [0,1,2]
+				if(km.labels_[i]==j):
+					ext = total_filename[i].split(".")
+					if ext[-1]=="pptx":
+						requestFileUpload(currentUserId, currentUserToken, 'textcompare/classified['+str(i)+']/presentation', uploaded_files[i])
+						shutil.move(path_dir+'/'+total_filename[i],"/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified["+str(j)+"]/presentation/"+total_filename[i])
+					else:
+						requestFileUpload(currentUserId, currentUserToken, 'textcompare/classified['+str(i)+']', uploaded_files[i])
+						shutil.move(path_dir+'/'+total_filename[i],"/home/gxicxigouxa/myproject/users/" + currentUserId+"/textcompare/classified["+str(j)+"]/"+total_filename[i])	
+						
+		
+		return "OK"
 	
 @app.route('/textcompare',methods=['POST'])#post with javascript code!!!
 #파일을 받아 각 폴더 내부에 있는 파일의 유사도를 분석하여 해당 파일과 가장 알맞는 폴더를 찾아 이동시킨다.

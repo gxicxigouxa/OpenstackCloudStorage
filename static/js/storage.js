@@ -349,8 +349,9 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     "forSharingUserId": $scope.forSharingUserId
                 }
             }).then(function successCallback(response) {
-                console.log("success: " + response);
-                //$scope.hide();
+                console.log("success: ");
+                console.log(response);
+                $scope.hide();
             }, function errorCallback(response) {
                 console.log("error: " + response);
             });
@@ -1332,6 +1333,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         $scope.containerName = selectedFolderName;
         $scope.isAutoClassification = false;
         $scope.isInitAutoClassification = false;
+        $scope.isClassifiedByDate = false;
         $scope.currentPath = "textcompare";
         $scope.selectedFolder;
         $scope.lastSelectedItem;
@@ -1607,7 +1609,8 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     data: {
                         "currentUserId": currentUserId,
                         "currentUserToken": currentUserToken,
-                        "currentFolderPath": $scope.currentPath
+                        "currentFolderPath": $scope.currentPath,
+                        "currentClassifiedByDateFlag": $scope.isClassifiedByDate
                     }
                 }).then(function successCallback(response) {
                     console.log("success: ");
@@ -1639,11 +1642,12 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
         };
 
         function clusterInitDialogController($scope, $mdDialog) {
-            numberOfCluster = 0;
-            $scope.clickConfirmButton = function() {
+            $scope.numberOfCluster = 0;
+            $scope.clickConfirmButton = function(element) {
 
                 console.log("파일 업로드 요청 시작(초기분류)");
-                console.log(numberOfCluster);
+                console.log($scope.numberOfCluster);
+                /*
                 $http({
                     method: "POST",
                     url: "/requestinitcluster",
@@ -1651,7 +1655,7 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                         "currentUserId": currentUserId,
                         "currentUserToken": currentUserToken,
                         "currentFolderPath": "textcompare",
-                        "currentNumberOfCluster": numberOfCluster
+                        "currentNumberOfCluster": $scope.numberOfCluster
                     }
                 }).then(function successCallback(response) {
                     console.log("success: ");
@@ -1662,6 +1666,34 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
                     console.log("error: ");
                     console.log(response);
                 });
+                */
+
+                //선택된 파일들.
+                var selectedFiles = element.files;
+                //선택된 파일의 갯수.
+                var numberOfSelectedFiles = selectedFiles.length;
+                Upload.upload({
+                    url: "/requestinitcluster",
+                    file: selectedFiles,
+                    data: {
+                        "currentUserId": currentUserId,
+                        "currentUserToken": currentUserToken,
+                        "currentFolderPath": $scope.currentPath,
+                        "currentNumberOfCluster": $scope.numberOfCluster,
+                    }
+                }).then(function successCallback(response) {
+                    console.log("success: ");
+                    console.log("받은 데이터:");
+                    console.log(response);
+                    //플라스크에서 폴더 목록을 전달받아서 추가하자.
+
+                    $scope.hideClusterInitDialog();
+                    
+                }, function errorCallback(response) {
+                    console.log("error: ");
+                    console.log(response);
+                });
+
                 console.log("파일 업로드 요청 끝(초기분류)");
             };
 

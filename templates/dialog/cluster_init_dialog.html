@@ -2,7 +2,7 @@
     <div class="md-toolbar-tools">
         <h2></h2>
         <span flex></span>
-        <md-button class="md-icon-button" ng-click="cancelClusterInitDialog">
+        <md-button class="md-icon-button" ng-click="cancelClusterInitDialog()">
             X
         </md-button>
     </div>
@@ -11,13 +11,21 @@
             <div class="cluster-init-dialog-header">
             </div>
             <div class="cluster_init_dialog-container" layout-gt-xs="row">
+                <!--
                 <md-input-container class="md-block" flax-gt-xs>
                     <label>클러스터 갯수 입력</label>
                     <input ng-model="numberOfCluster">
                 </md-input-container>
+            -->
+                <p>업로드 요청 파일을 분석하여 자동으로 폴더 생성 후 분류합니다.</p>
+                <p>아래 버튼을 선택해 업로드할 파일을 선택해 주세요.</p>
             </div>
             <div class="cluster_init_dialog-button">
+                <!--
                 <md-button ng-click="clickConfirmButton()">확인</md-button>
+                -->
+                <input id="fileInitConfirmButton" type="file" class="ng-hide" onchange="angular.element(this).scope().clickConfirmButton(this)" aria-label="fileInput" name="file[]" multiple></input>
+                <label for="fileInitConfirmButton" class="md-button md-raised">초기 업로드</label>
             </div>
         </div>
     </md-dialog-content>

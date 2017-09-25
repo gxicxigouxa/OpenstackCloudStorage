@@ -27,8 +27,14 @@
                         <input id="fileInitClassificationButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChangedByInitClassificationButton(this)" aria-label="fileInput" name="file[]" multiple></input>
                         <label for="fileInitClassificationButton" class="md-button md-raised">초기 파일 분류</label>
                         -->
-                        <md-button class="md-raised" ng-click="showClusterInitDlalog()">초기 파일 분류</md-button>
+                        
+                        <md-button class="md-raised" ng-click="showClusterInitDlalog()" ng-disabled="existFilesGridData.data.length != 0">초기 파일 분류</md-button>
+                        
                         <md-button class="md-raised" ng-click="showCreateNewFolderForm()">새 폴더</md-button>
+
+                    </div>
+                    <div layout="row" ng-hidt="!isPathContainer()">
+                        <md-switch ng-model="isClassifiedByDate">날짜로 분류</md-switch>
                     </div>
                     <div id="inner-path-button-div" layout="row" ng-hide="isPathContainer()">
                         <md-button class="md-raised md-warn" ng-click="deleteFile()" ng-disabled="isNotSelectedExistFiles()">삭제</md-button>
@@ -37,6 +43,8 @@
 
                         <input id="fileUploadButton" type="file" class="ng-hide" onchange="angular.element(this).scope().fileChangedByUploadButton(this)" aria-label="fileInput" name="upFile"></input>
                         <label for="fileUploadButton" class="md-button md-raised">업로드</label>
+
+                        
                     </div>
                 </form>
                 <form id="create-new-forlder-form" ng-hide="!isClickedNewFolderButton" layout="row">

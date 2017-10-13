@@ -1576,10 +1576,10 @@ app.controller('storageController', ['$scope', '$mdDialog', '$filter', '$window'
             console.log("uploadFile.files:");
             console.log(uploadFile.files);
             
-            if (!$scope.isAutoClassification && !scope.isInitAutoClassification) {
+            if (!$scope.isAutoClassification && !$scope.isInitAutoClassification) {
                 console.log("파일 업로드 요청 시작(일반)");
                 Upload.upload({
-                    url: "/requestfileupload",
+                    url: "/requestfileuploadfortextcompare",
                     file: uploadFile.files[0],
                     data: {
                         "currentUserId": currentUserId,

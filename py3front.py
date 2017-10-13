@@ -416,7 +416,7 @@ def malwarecheck():
 	print(Total_num)
 	print(detected_cnt)
 	print(detected_cnt / Total_num)
-	if detected_cnt / Total_num > 0.1:
+	if detected_cnt / Total_num > 0.01:
 		return "Virus detected"
 	elif request.files['file'].filename == "FakeMalwareFile.txt":
 		return "Virus detected"
@@ -854,6 +854,28 @@ def requestfileupload():
 		print(currentToUploadFile)
 		return jsonify(requestFileUpload(currentUserId, currentUserToken, currentFolderPath, currentToUploadFile))
 
+#파일 업로드 요청(textcompare에서).
+def requestFileUploadForTextCompare(userId, userToken, folderPath, toUploadFile):
+	requestFileUpload(userId, userToken, folderPath, toUploadFile)
+	path_dir = '/home/gxicxigouxa/myproject/users/' + userId + '/' + folderPath
+	toUploadFile.save(os.path.join(path_dir, file.filename))
+@app.route('/requestfileuploadfortextcompare', methods = ['POST'])
+def requestfileuploadfortextcompare():
+	if request.method == 'POST':
+		fileData = request.files
+		data = request.form
+		currentUserId = data["currentUserId"]
+		currentUserToken = data["currentUserToken"]
+		currentFolderPath = data["currentFolderPath"]
+		currentToUploadFile = fileData["file"]
+		print("파일 업로드 요청(textcompare에서).")
+		print("currentUserId: " + currentUserId)
+		print("currentUserToken: " + currentUserToken)
+		print("currentFolderPath: " + currentFolderPath)
+		print("currentToUploadFile: ")
+		print(currentToUploadFile)
+		return jsonify(requestFileUploadForTextCompare(currentUserId, currentUserToken, currentFolderPath, currentToUploadFile))
+
 #TODO. 파일 다운로드 요청.
 def requestFileDownload(userId, userToken, folderPath, fileName):
 	url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ userId + "/" + folderPath
@@ -883,7 +905,8 @@ def requestfiledownload():
 		url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/" + currentFolderPath
 		print("file name: " + currentFileName)
 		headers  ={'x-auth-token':currentUserToken, 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
-		response = requests.get(url + '/' + currentFileName, headers=headers)
+		#response = requests.get(url + '/' + currentFileName, headers=headers)
+		response = requests.get(url + '/' + currentFileName, headers=headers, stream=True)
 		response.encoding = 'utf-8'
 		print(url + '/' + currentFileName)
 		print("response.text")
@@ -1115,7 +1138,7 @@ def textcompare2():
 		path_dir = '/home/gxicxigouxa/myproject/users/' + currentUserId + '/textcompare'
 		print("length of up~")
 		print(len(uploaded_files))
-		if len(uploaded_files)>10:
+		if len(uploaded_files)<100:
 		
 			for file in uploaded_files:		
 				if file and allowed_file(file.filename):
@@ -1178,7 +1201,7 @@ def textcompare2():
 				#print(choosen_folder_path)
 				#input_vector= upload_data("/home/gxicxigouxa/machinetest.txt")
 				frequency_list = list()
-			
+				
 				for i in range(len(data)):
 					frequency_list.append(frequency(upload_contents_list,data[i]))
 		
@@ -1199,20 +1222,31 @@ def textcompare2():
 				print(index)
 				print(choosen_folder_path[index])
 
-				if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation			
-					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+filename)
-					print(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+filename)
+				if(filename.split('.')[-1]=='pptx'):# upload file extension is pptx !!! go to presentation	
+					if (isClassifiedByDate=='true'):
+						date_filename =cur_time+ filename 
+						print("date true")
+					else:
+						date_filename=filename	
+											
+					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+date_filename)
+					print(path_dir+'/'+filename,choosen_folder_path[index]+"/"+"presentation/"+date_filename)
 					cuttedMost = choosen_folder_path[index].split(path_dir + "/")
 					print("cuttedMost: ")
 					print(cuttedMost)
 					url = 'http://' + OPENSTACK_IP + ':8080/v1/AUTH_'+ currentUserId + "/textcompare/" + cuttedMost[1] + "/presentation"
 					print("file name: " + filename)
 					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
-					response = requests.put(url + '/' + filename, file, headers=headers)
+					response = requests.put(url + '/' + date_filename, file, headers=headers)
 					print(url + '/' + filename)
 					print(response.text)
 				else:
-					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+filename)
+					if (isClassifiedByDate=='true'):
+						date_filename =cur_time+ filename 
+						print("date true")
+					else:
+						date_filename=filename						
+					shutil.move(path_dir+'/'+filename,choosen_folder_path[index]+"/"+date_filename)
 					cuttedMost = choosen_folder_path[index].split(path_dir + "/")
 					print("cuttedMost: ")
 					print(cuttedMost)
@@ -1221,7 +1255,7 @@ def textcompare2():
 					print(url)
 					print("file name: " + filename)
 					headers  ={'X-File-Name':filename, 'x-auth-token':currentUserToken,'content-type':'text/html', 'cache-control':'no-cache'}
-					response = requests.put(url + '/' + filename, file, headers=headers)
+					response = requests.put(url + '/' + date_filename, file, headers=headers)
 					print(url + '/' + filename)
 					print(response.text)
 
@@ -1429,6 +1463,7 @@ def upload_data(file_path):
 	return data
 
 def read_data(folder_path):
+	
 	data=list() # 폴더마다 명사로 어근 추출 리스트를 가지고 있음 data[0]에는 첫번째 폴더 모든 파일에 대한 어근이 리스트로 있음
 	twitter_obj = Twitter()
 	imsi=list()
@@ -1442,11 +1477,19 @@ def read_data(folder_path):
 				if ext[-1]=='txt':
 					f = open(full_fname)
 					content = f.read()
+				
 				elif ext[-1]=='docx':
 					content=docx2txt.process(full_fname)
+					
 				else:
+					
 					continue
-				for parsed_list in twitter_obj.nouns(content) :		
+
+				
+
+			
+				for parsed_list in twitter_obj.nouns(content) :	
+						
 					file_noun_list.append(parsed_list)
 					imsi.append(parsed_list)
 
@@ -1467,7 +1510,10 @@ def read_data(folder_path):
 				choosen_folder_path[count]=root
 				count=count+1
 				folder_file_count.append(files)
-			imsi=list()			
+			
+			imsi=list()
+			
+						
 	return data
 
 def frequency(input_vector, trained_vector):
@@ -1492,7 +1538,14 @@ def Log_laplace_probability(input_vector,trained_vector,frequency,v,n,file_num):
 	probability = 0
 	for word in input_vector:
 		probability = probability + math.log((frequency[word]+1)/(denominator))
+	print("n/file_num")
+	print(n/file_num)
 	probability = probability + math.log(n/file_num)
+	print("n:")
+	print(n)
+	print("file_num:")
+	print(file_num)
+
 	return probability
 
 #클러스터 초기화 요청.
